@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MoneyTest {
@@ -42,5 +43,19 @@ class MoneyTest {
    void anUnknownCurrencyCodeFallsBackToEuro() {
       Messages.setLocale(Locale.ENGLISH);
       assertEquals("€15.00", Money.format(15.0, "not-a-currency"));
+   }
+
+   @Test
+   void typedAmountsAcceptADotOrACommaAsTheDecimalSeparator() {
+      assertEquals(12.5, Money.parse("12.5"));
+      assertEquals(12.5, Money.parse(" 12,50 "));
+      assertEquals(7.0, Money.parse("7"));
+   }
+
+   @Test
+   void textThatIsNotANumberIsRejected() {
+      assertThrows(NumberFormatException.class, () -> Money.parse("abc"));
+      assertThrows(NumberFormatException.class, () -> Money.parse("1,234.50"));
+      assertThrows(NumberFormatException.class, () -> Money.parse(""));
    }
 }

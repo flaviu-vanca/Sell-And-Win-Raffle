@@ -20,18 +20,17 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import raffle.models.Item;
 import raffle.models.Player;
-import raffle.services.DrawHistory;
 import raffle.services.DrawSession;
 import raffle.services.RaffleDraw;
+import raffle.storage.RaffleRepository;
+import raffle.storage.Storage;
 import raffle.ui.AppIcon;
 import raffle.ui.ConfettiCanvas;
 import raffle.ui.Dialogs;
 import raffle.ui.Theme;
-import raffle.utils.AppPaths;
 import raffle.utils.Fxml;
 import raffle.utils.ItemImages;
 import raffle.utils.Messages;
-import raffle.utils.PlayerDataReaderAndWriter;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -83,7 +82,7 @@ public class DrawController {
    private final RaffleDraw raffleDraw = new RaffleDraw();
    // Only used to animate the numbers on screen. It never decides the winner.
    private final Random animationRandom = new Random();
-   private final DrawHistory drawHistory = new DrawHistory(AppPaths.drawHistoryFile());
+   private final RaffleRepository repository = Storage.repository();
    private final ConfettiCanvas confetti = new ConfettiCanvas();
 
    private List<Player> ledger = List.of();
@@ -225,7 +224,7 @@ public class DrawController {
       confetti.burst();
 
       try {
-         drawHistory.record(itemTitle, winner, Instant.now());
+         repository.recordDraw(itemTitle, winner, Instant.now());
       } catch (IOException e) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.warning"), Messages.get("draw.saveFailed"));
       }// end of try-catch block
@@ -382,9 +381,9 @@ public class DrawController {
       this.itemTitle = selectedItem.getTitle();
       prizeImage.setImage(ItemImages.load(selectedItem.getImage(), 170, 110));
       try {
-         ledger = PlayerDataReaderAndWriter.readPlayersFromFile(AppPaths.recordsFile(itemTitle));
+         ledger = repository.ledger(itemTitle);
          soldTickets = RaffleDraw.soldTickets(ledger);
-      } catch (IOException | NumberFormatException e) {
+      } catch (IOException e) {
          ledger = List.of();
          soldTickets = List.of();
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("draw.loadFailed"));

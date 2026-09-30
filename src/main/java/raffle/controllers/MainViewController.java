@@ -15,30 +15,23 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import raffle.main.App;
 import raffle.models.Item;
-import raffle.models.Player;
+import raffle.services.ItemOverview;
 import raffle.services.ItemSales;
+import raffle.services.ItemService;
 import raffle.services.SalesSummary;
+import raffle.storage.Storage;
 import raffle.ui.Theme;
 import raffle.utils.AppPaths;
-import raffle.utils.BackupService;
-import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.ItemImages;
 import raffle.utils.Messages;
 import raffle.utils.Money;
-import raffle.utils.PlayerDataReaderAndWriter;
 import raffle.ui.Dialogs;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 public class MainViewController {
 
@@ -85,6 +78,7 @@ public class MainViewController {
    private ObservableList<Item> itemList;
    // Sales figures per item title, read from each item's ticket ledger
    private final Map<String, ItemSales> sales = new HashMap<>();
+   private final ItemService itemService = new ItemService(Storage.repository(), AppPaths.root());
 
    @FXML
    private void initialize() {
@@ -222,7 +216,7 @@ public class MainViewController {
       addTooltip(themeButton, Messages.get("main.tip.theme"));
       themeButton.setText(Messages.get(Theme.mode() == Theme.Mode.DARK ? "main.btn.themeLight" : "main.btn.themeDark"));// shows the theme it switches to
 
-      loadItemsFromCSV();
+      loadItems();
 
       // Bind column widths to the table's width (also applied once right away, not only after a resize)
       itemTable.widthProperty().addListener((obs, oldWidth, newWidth) -> applyColumnWidths(newWidth.doubleValue()));
@@ -272,46 +266,23 @@ public class MainViewController {
       }//end of try-catch block
    }// end of handleBuyTickets method
 
-   // Load items from the data.csv file
-   private void loadItemsFromCSV() {
-      Path dataFilePath = AppPaths.catalogFile();
-
-      if (Files.exists(dataFilePath)) {
-         try {
-            List<Item> items = ItemDataReaderAndWriter.readItemsFromFile(dataFilePath);
-            itemList = FXCollections.observableArrayList(items);
-            loadSales(items);
-            itemTable.setItems(itemList);
-         } catch (IOException e) {
-            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.loadCatalog"));
-         } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.parse"));
-         }
-      } else {
-         // A fresh install: no pop-up, the empty table says what to do
-         itemList = FXCollections.observableArrayList();
+   // Load the items and each item's sales figures from the repository
+   private void loadItems() {
+      try {
+         List<ItemOverview> overview = itemService.overview();
+         itemList = FXCollections.observableArrayList(overview.stream().map(ItemOverview::item).toList());
+         sales.clear();
+         overview.forEach(entry -> sales.put(entry.item().getTitle(), entry.sales()));
+         updateDashboard();
          itemTable.setItems(itemList);
-         loadSales(List.of());
-      }
-   }// end of loadItemsFromCSV method
-
-   // Read each item's ticket ledger once and work out its sales figures
-   private void loadSales(List<Item> items) {
-      sales.clear();
-      for (Item item : items) {
-         List<Player> ledger = List.of();
-         Path ledgerFile = AppPaths.recordsFile(item.getTitle());
-         if (Files.exists(ledgerFile)) {
-            try {
-               ledger = PlayerDataReaderAndWriter.readPlayersFromFile(ledgerFile);
-            } catch (IOException | NumberFormatException e) {
-               System.err.println("Could not read " + ledgerFile + ": " + e.getMessage());
-            }//end of try-catch block
-         }//end of if block
-         sales.put(item.getTitle(), ItemSales.of(ledger, item.getPrice()));
-      }//end of for loop
-      updateDashboard();
-   }// end of loadSales method
+      } catch (IOException e) {
+         if (itemList == null) {
+            itemList = FXCollections.observableArrayList();
+            itemTable.setItems(itemList);
+         }// end of if block
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.loadCatalog"));
+      }// end of try-catch block
+   }// end of loadItems method
 
    private ItemSales salesOf(Item item) {
       return sales.getOrDefault(item.getTitle(), ItemSales.of(List.of(), item.getPrice()));
@@ -347,12 +318,10 @@ public class MainViewController {
       if (selectedItem != null) {
          if (Dialogs.confirm(Messages.get("main.delete.title"), Messages.get("main.delete.header"))) {
             try {
-               ItemDataReaderAndWriter.writeItemsToCSV(itemList.filtered(item -> item != selectedItem), AppPaths.catalogFile());
+               itemService.delete(selectedItem.getTitle());
                itemList.remove(selectedItem);
                sales.remove(selectedItem.getTitle());
                updateDashboard();
-               archiveRecords(selectedItem.getTitle());
-               deleteDirectory(selectedItem.getTitle());
                showAlert(Alert.AlertType.CONFIRMATION, Messages.get("main.deleted.title"), Messages.get("main.deleted") + "\n\n" + Messages.get("item.recordsArchived"));
             } catch (IOException e) {
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.updateCatalog"));
@@ -405,7 +374,7 @@ public class MainViewController {
 
    @FXML
    private void handleRefreshList() {
-      loadItemsFromCSV();
+      loadItems();
    }//end of handleRefreshList method
 
    // Add a tooltip to a control
@@ -413,31 +382,6 @@ public class MainViewController {
       Tooltip tooltip = new Tooltip(text);
       control.setTooltip(tooltip);
    }//end of addTooltip method
-
-   // Delete the image directory with the given title
-   private void deleteDirectory(String title) {
-      File directory = AppPaths.itemDir(title).toFile();
-      File[] files = directory.listFiles();
-      if (files != null) {
-         for (File file : files) {
-            file.delete();
-         }
-         directory.delete();
-      }//end of if block
-   }//end of deleteDirectory method
-
-   // The ticket ledger holds buyer data and money owed, so it is moved to backups instead of being destroyed.
-   // It also frees the title, which previously could not be reused until the ledger was deleted by hand.
-   private void archiveRecords(String title) {
-      Path records = AppPaths.recordsFile(title);
-      if (Files.exists(records)) {
-         try {
-            BackupService.archive(AppPaths.root(), records);
-         } catch (IOException e) {
-            System.err.println("Could not archive " + records + ": " + e.getMessage());
-         }//end of try-catch block
-      }//end of if block
-   }//end of archiveRecords method
 
    @FXML
    private void handleViewItem(){

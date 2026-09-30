@@ -17,6 +17,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import raffle.controllers.*;
 import raffle.models.Item;
+import raffle.storage.Storage;
 import raffle.ui.AppIcon;
 import raffle.ui.Dialogs;
 import raffle.ui.Theme;
@@ -26,8 +27,6 @@ import raffle.utils.Fxml;
 import raffle.utils.Messages;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class App extends Application {
 
@@ -50,6 +49,11 @@ public class App extends Application {
 
       showLoadingView();
    }// end of start method
+
+   @Override
+   public void stop() {
+      Storage.close();
+   }// end of stop method
 
    // Method to show the Loading View with error handling
    private void showLoadingView() {
@@ -215,15 +219,6 @@ public class App extends Application {
 
    public void showAddPlayerView(Item selectedItem) {
       try {
-         String userHome = System.getProperty("user.home");
-         Path dataFilePath = Paths.get(userHome, "Sell & Win Raffle", "data", "data.csv");
-
-         // Check if the data.csv file is accessible
-         if (new AddPlayerController().isFileAccessibleForWriting(dataFilePath)) {
-            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.fileAccess"), Messages.get("err.fileOpen", "data.csv"), false);
-            return; // Return early, do not open the Add Player window
-         }
-
          FXMLLoader loader = Fxml.loader("/fxml_files/add-player-view.fxml");
          Scene scene = sceneOf(loader);
          primaryStage.setScene(scene);

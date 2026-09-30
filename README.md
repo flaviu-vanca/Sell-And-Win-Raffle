@@ -161,6 +161,7 @@ src/
         main/
         models/
         services/
+        storage/
         ui/
         utils/
     resources/
@@ -173,6 +174,8 @@ src/
       raffle/
         models/
         services/
+        storage/
+        ui/
         utils/
 ```
 
@@ -209,7 +212,18 @@ The UI is split into focused JavaFX controllers:
 - `ItemSales` — tickets sold, paid and owed, and money collected/outstanding for an item (money counted in cents)
 - `Payments` — marking the tickets of a buyer paid or unpaid
 - `DrawSession` — one sitting: how many winners, who has won, who can still win ("one prize per person")
-- `DrawHistory` — append-only audit log of draws
+- `SalesService` — sells tickets, takes them back and records payments (validates, reads the ledger, changes it, saves it); `TicketSales` holds the pure ticket logic behind it
+- `ItemService` — adds items (folder for the pictures, unsold tickets) and deletes them; `overview()` lists the items with their sales figures
+- `TicketLookup` — finds tickets by number, phone or name for the status screen
+- `ValidationException` — carries the key of the message to show, so services know nothing about language or screens
+
+### Storage
+
+All data goes through the `RaffleRepository` interface (`raffle.storage`), so the screens and services do not know where the data lives.
+
+- `RaffleRepository` — items, ticket ledgers and the draw history; every call either completes or fails and leaves the data as it was
+- `CsvRaffleRepository` — the CSV file layout described under *Data Storage*
+- `Storage` — the repository the application runs on
 
 ### UI helpers
 
@@ -220,7 +234,7 @@ The UI is split into focused JavaFX controllers:
 
 ### Persistence and utilities
 
-- `ItemDataReaderAndWriter`, `PlayerDataReaderAndWriter` — CSV reading and writing (quotes and commas in names survive a round trip; files from older versions are still read)
+- `ItemDataReaderAndWriter`, `PlayerDataReaderAndWriter` — CSV reading and writing used by the CSV repository (quotes and commas in names survive a round trip; files from older versions are still read)
 - `SafeFiles` — atomic writes with a `.bak` of the previous version
 - `BackupService` — start-up snapshots and archiving of deleted items
 - `AppPaths` — the one place that knows where data lives
@@ -236,9 +250,9 @@ The UI is split into focused JavaFX controllers:
 Operator-facing safeguards include:
 
 - Empty-field validation on item and player forms
-- Positive-number validation for ticket counts and ticket price
+- Positive-number validation for ticket counts and ticket price (the price can be typed as `12.50` or `12,50`)
 - Phone number validation (7–15 digits, optional `+`; spaces and dashes are ignored)
-- File accessibility checks before writing CSV files
+- A file that is open in another program (Excel) makes the save fail with a clear message instead of losing data
 - Confirmation dialogs before deleting items or player records
 - A failed save is reported and leaves the previous data in place
 - Deleting an item keeps its sales ledger in `backups/deleted/`
@@ -280,6 +294,8 @@ The repository contains automated tests for:
 
 - Draw logic (only sold tickets win, exclusions, chance proportional to tickets held, several winners, one prize per person)
 - Draw history
+- Selling and taking back tickets (random distinct tickets, several purchases by one buyer, totals per buyer), items (creation, duplicates, pictures, deletion with archived ledger) and the status lookup
+- The storage contract: every repository implementation must pass the same tests
 - CSV reading and writing, including files from older versions
 - Atomic saves and backups
 - Phone validation, settings, money formatting and localized messages
@@ -287,7 +303,7 @@ The repository contains automated tests for:
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 20 test classes, 89 JUnit tests (`mvn test`). The controllers are not unit tested yet.
+Current test suite: 25 test classes, 140 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
 
 ---
 

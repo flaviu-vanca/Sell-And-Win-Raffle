@@ -1,5 +1,6 @@
-package raffle.services;
+package raffle.storage;
 
+import raffle.models.DrawEntry;
 import raffle.models.Player;
 import raffle.utils.CsvUtil;
 
@@ -12,21 +13,18 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Append-only log of every draw, kept as the audit trail that shows who won what and when. */
-public final class DrawHistory {
-
-   public record Entry(Instant time, String itemTitle, int ticketId, String winnerName, String phoneNumber) {
-   }
+/** Append-only CSV log of every draw, kept as the audit trail that shows who won what and when. */
+final class CsvDrawLog {
 
    static final String HEADER = "Time,Item,Ticket,Winner,Phone Number";
 
    private final Path file;
 
-   public DrawHistory(Path file) {
+   CsvDrawLog(Path file) {
       this.file = file;
    }
 
-   public void record(String itemTitle, Player winner, Instant time) throws IOException {
+   void record(String itemTitle, Player winner, Instant time) throws IOException {
       Files.createDirectories(file.toAbsolutePath().getParent());
       StringBuilder text = new StringBuilder();
       if (! Files.exists(file)) {
@@ -42,8 +40,8 @@ public final class DrawHistory {
       Files.writeString(file, text, StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
    }// end of record method
 
-   public List<Entry> readAll() throws IOException {
-      List<Entry> entries = new ArrayList<>();
+   List<DrawEntry> readAll() throws IOException {
+      List<DrawEntry> entries = new ArrayList<>();
       if (! Files.exists(file)) {
          return entries;
       }// end of if block
@@ -54,18 +52,14 @@ public final class DrawHistory {
          }// end of if block
          String[] fields = CsvUtil.parseLine(lines.get(i));
          if (fields.length >= 5) {
-            entries.add(new Entry(Instant.parse(fields[0]), fields[1], Integer.parseInt(fields[2].trim()), fields[3], fields[4]));
+            try {
+               entries.add(new DrawEntry(Instant.parse(fields[0]), fields[1], Integer.parseInt(fields[2].trim()), fields[3], fields[4]));
+            } catch (RuntimeException e) {
+               throw new IOException("Malformed line " + (i + 1) + " in " + file.getFileName() + ": " + e.getMessage(), e);
+            }// end of try-catch block
          }// end of if block
       }// end of for loop
       return entries;
    }// end of readAll method
 
-   /** Ticket ids that already won a draw for this item. */
-   public List<Integer> winningTicketIds(String itemTitle) throws IOException {
-      return readAll().stream()
-                      .filter(entry -> entry.itemTitle().equals(itemTitle))
-                      .map(Entry::ticketId)
-                      .toList();
-   }// end of winningTicketIds method
-
-}// end of DrawHistory class
+}// end of CsvDrawLog class

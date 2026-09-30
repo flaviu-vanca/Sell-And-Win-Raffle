@@ -4,24 +4,19 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
-import raffle.models.Item;
-import raffle.models.Player;
+import raffle.services.ItemService;
+import raffle.services.ValidationException;
+import raffle.storage.Storage;
 import raffle.utils.AppPaths;
 import raffle.utils.ImageFiles;
 import raffle.utils.ItemImages;
-import raffle.utils.ItemDataReaderAndWriter;
-import raffle.utils.PlayerDataReaderAndWriter;
 import raffle.utils.Messages;
+import raffle.utils.Money;
 import raffle.ui.Dialogs;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class AddItemController {
 
@@ -42,8 +37,8 @@ public class AddItemController {
    @FXML
    private ImageView itemImageView;
 
+   private final ItemService items = new ItemService(Storage.repository(), AppPaths.root());
    private Path chosenImage;
-   private String title;
 
    @FXML
    public void initialize() {
@@ -81,110 +76,52 @@ public class AddItemController {
 
    @FXML
    private void handleAddItem() {
-      title = titleTextField.getText();// get the text from the titleTextField
-      title = titleTextField.getText().trim();// remove leading and trailing whitespaces
-      title = title.replaceAll("[<>:\"/\\\\|?*]", "_");// replace invalid characters with underscore
+      String title = titleTextField.getText();
       String description = descriptionTextField.getText();
-      String numberOfTicketsText = numberOfTicketsTextField.getText();
-      String ticketPriceText = ticketPriceTextField.getText();
+      String numberOfTicketsText = numberOfTicketsTextField.getText().trim();
+      String ticketPriceText = ticketPriceTextField.getText().trim();
 
-      // Validate inputs
-      if (title.isEmpty()) {
+      // What was typed: is everything filled in, and are the numbers numbers?
+      if (ItemService.cleanTitle(title).isEmpty()) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.titleEmpty"));
          return;
       }
-
       if (description.isEmpty()) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.descriptionEmpty"));
          return;
       }
-
       if (numberOfTicketsText.isEmpty()) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsEmpty"));
          return;
       }
-
       if (ticketPriceText.isEmpty()) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.priceEmpty"));
          return;
       }
 
-      // Validate the number of tickets
       int numberOfTickets;
       try {
          numberOfTickets = Integer.parseInt(numberOfTicketsText);
-         if (numberOfTickets <= 0) {
-            showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsPositiveInt"));
-            return;
-         }
       } catch (NumberFormatException e) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsInvalid"));
          return;
       }// end of try-catch block
 
-      // Validate the ticket price
       double ticketPrice;
       try {
-         ticketPrice = Double.parseDouble(ticketPriceText);
-         if (ticketPrice <= 0) {
-            showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.pricePositive"));
-            return;
-         }
+         ticketPrice = Money.parse(ticketPriceText);
       } catch (NumberFormatException e) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.priceInvalid"));
          return;
       }// end of try-catch block
 
-      Path recordsPath = AppPaths.recordsDir();
-      Path csvFilePath = AppPaths.recordsFile(title);
-
-      // Check if directory already exists
-      Path path = AppPaths.itemDir(title);
-      if (Files.exists(path)) {
-         showAlert(Alert.AlertType.WARNING, Messages.get("additem.dirExists.title"), Messages.get("additem.dirExists", title));
-         return;
-      }
-
-      // Check if CSV file already exists
-      if (Files.exists(csvFilePath)) {
-         showAlert(Alert.AlertType.WARNING, Messages.get("additem.recordExists.title"), Messages.get("additem.recordExists", title, recordsPath));
-         return;
-      }
-
-      // Create the directory and the records directory
-      Path copiedImage = null;
+      // The rules (positive numbers, title not taken) and the saving are the item service's job
       try {
-         Files.createDirectories(path);
-         Files.createDirectories(recordsPath);
-
-         // The chosen picture goes into the item's own folder
-         if (chosenImage != null) {
-            copiedImage = ImageFiles.copyInto(path, chosenImage);
-         }// end of if block
-
-         // One empty ledger row per ticket
-         PlayerDataReaderAndWriter.writePlayersToCSV(generateEmptyTickets(numberOfTickets), csvFilePath);
-
-         // Create a new item (without a picture it is stored as empty text and the screens show the logo)
-         Item newItem = new Item(copiedImage == null ? "" : copiedImage.toString(), title, description, numberOfTickets, ticketPrice);
-
-         // Add it to the catalog, creating the data directory and data.csv on first use
-         Path dataFilePath = AppPaths.catalogFile();
-         Files.createDirectories(dataFilePath.getParent());
-         List<Item> items = Files.exists(dataFilePath) ? ItemDataReaderAndWriter.readItemsFromFile(dataFilePath) : new ArrayList<>();
-         items.add(newItem);
-         ItemDataReaderAndWriter.writeItemsToCSV(items, dataFilePath);
+         title = items.create(title, description, numberOfTickets, ticketPrice, chosenImage).getTitle();
+      } catch (ValidationException e) {
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get(e.messageKey(), e.arguments()));
+         return;
       } catch (IOException e) {
-         // Do not leave a half created item behind: it would block adding the same title again
-         try {
-            Files.deleteIfExists(csvFilePath);
-            if (copiedImage != null) {
-               Files.deleteIfExists(copiedImage);
-            }// end of if block
-            Files.deleteIfExists(path);
-         } catch (IOException ignored) {
-            // nothing more can be done here
-         }// end of try-catch block
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("additem.err.create"));
          return;
       }// end of try-catch block
@@ -194,13 +131,6 @@ public class AddItemController {
       handleClearFields();
 
    }// end of handleAddItem method
-
-   // Generate the ledger rows for the item: every ticket starts unsold (empty name and phone)
-   private List<Player> generateEmptyTickets(int numberOfTickets) {
-      return IntStream.rangeClosed(1, numberOfTickets)
-                      .mapToObj(id -> new Player(id, "", "", 0))
-                      .collect(Collectors.toList());
-   }// end of generateEmptyTickets method
 
    // Show an alert dialog
    private void showAlert(Alert.AlertType alertType, String title, String message) {

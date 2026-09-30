@@ -17,6 +17,20 @@ public final class Money {
    private Money() {
    }
 
+   /**
+    * Reads an amount typed by the operator. A comma works as the decimal separator ({@code 12,50}), as people
+    * write it in Romanian.
+    *
+    * @throws NumberFormatException when the text is not a number
+    */
+   public static double parse(String text) {
+      String trimmed = text.trim();
+      if (trimmed.indexOf(',') >= 0 && trimmed.indexOf('.') < 0) {
+         trimmed = trimmed.replace(',', '.');
+      }// end of if block
+      return Double.parseDouble(trimmed);
+   }// end of parse method
+
    public static String format(double amount) {
       return format(amount, AppSettings.get("currency").orElse(DEFAULT_CURRENCY));
    }// end of format method

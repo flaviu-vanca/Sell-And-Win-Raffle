@@ -3,16 +3,13 @@ package raffle.controllers;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import raffle.models.Player;
-import raffle.utils.AppPaths;
+import raffle.services.TicketLookup;
+import raffle.storage.Storage;
 import raffle.utils.Messages;
-import raffle.utils.PhoneNumbers;
-import raffle.utils.PlayerDataReaderAndWriter;
 import raffle.ui.Dialogs;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 public class PlayerStatusController {
 
@@ -37,112 +34,54 @@ public class PlayerStatusController {
 
    @FXML
    private void handleCheckPlayer() {
-      // Get the player input
       String input = playerInput.getText().trim();
-
-      // Check if the input is empty
       if (input.isEmpty()) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.warning"), Messages.get("status.enterQuery"));
          return;
       }// end of if statement
 
-      // Phone numbers are stored without spaces or dashes, so compare the same way
-      String phoneInput = PhoneNumbers.normalize(input);
-
+      TicketLookup.Result result;
       try {
-         List<Player> matchingPlayers = PlayerDataReaderAndWriter.readPlayersFromFile(AppPaths.recordsFile(itemTitle));
-
-         // Check if the player is found
-         if (matchingPlayers.isEmpty()) {
-            displayPlayerStatus.setText("\n\n\t" + Messages.get("status.notFoundAny"));
-            return;
-         }// end of if statement
-
-         // Check if the input is numeric
-         boolean isNumeric = phoneInput.chars().allMatch(Character::isDigit);
-
-         // a number shorter than a phone number (7 digits) is a ticket ID
-         if (isNumeric && phoneInput.length() < 7) {
-
-            // Search by ID
-            int inputId = Integer.parseInt(phoneInput);
-            Player matchingPlayer = matchingPlayers.stream()
-                                                   .filter(player -> player.getId() == inputId)
-                                                   .findFirst()
-                                                   .orElse(null);
-
-            if (matchingPlayer == null) {
-               displayPlayerStatus.setText("\n\n" + Messages.get("status.notFoundId"));
-            } else if (! matchingPlayer.isSold()) {
-               displayPlayerStatus.setText("\n\n" + Messages.get("status.ticketNotSold", String.valueOf(inputId)));
-            } else {
-               displayPlayerStatus.setText(Messages.get("status.found",
-                                                        matchingPlayer.getName(),
-                                                        matchingPlayer.getPhoneNumber(),
-                                                        String.valueOf(matchingPlayer.getNumberOfTickets()),
-                                                        String.valueOf(matchingPlayer.getId()),
-                                                        paymentText(List.of(matchingPlayer))));
-            }// end of if/else block
-         } else {
-            Map<String, List<Player>> playersByPhoneNumber = matchingPlayers.stream()
-                                                                            .collect(Collectors.groupingBy(Player::getPhoneNumber));
-
-            // check if the map contains the input key (phone number)
-            if (playersByPhoneNumber.containsKey(phoneInput)) {
-
-               // Display players with the given phone number
-               List<Player> playersWithPhone = playersByPhoneNumber.get(phoneInput);
-               StringBuilder resultText = new StringBuilder();
-               resultText.append(Messages.get("status.phoneHeader", phoneInput));
-
-               // Group players by name
-               Map<String, List<Player>> playersByName = playersWithPhone.stream()
-                                                                         .collect(Collectors.groupingBy(Player::getName));
-               // Display the result
-               for (Map.Entry<String, List<Player>> entry : playersByName.entrySet()) {
-                  String name = entry.getKey();
-                  List<Player> players = entry.getValue();
-                  int totalTickets = players.size();
-                  List<Integer> ids = players.stream().map(Player::getId).collect(Collectors.toList());
-
-                  resultText.append("\n").append(Messages.get("status.block", name, String.valueOf(totalTickets), ids.toString(), paymentText(players)));
-               }// end of for loop
-               // Display the result
-               displayPlayerStatus.setText(resultText.toString());
-            } else {
-               // Display matching players by name and phone number separately
-               StringBuilder resultText = new StringBuilder();
-               // Group players by name and phone number
-               Map<String, Map<String, List<Player>>> playersByNameAndPhone = matchingPlayers.stream()
-                                                                                             .filter(player -> player.getName().equalsIgnoreCase(input))
-                                                                                             .collect(Collectors.groupingBy(Player::getName, Collectors.groupingBy(Player::getPhoneNumber)));
-               // Display the result
-               for (Map.Entry<String, Map<String, List<Player>>> entry : playersByNameAndPhone.entrySet()) {
-                  String name = entry.getKey();
-                  Map<String, List<Player>> playersByPhone = entry.getValue();
-
-                  for (Map.Entry<String, List<Player>> phoneEntry : playersByPhone.entrySet()) {
-                     String phone = phoneEntry.getKey();
-                     List<Player> players = phoneEntry.getValue();
-                     int totalTickets = players.size();
-                     List<Integer> ids = players.stream().map(Player::getId).collect(Collectors.toList());
-
-                     resultText.append(Messages.get("status.blockPhone", name, phone, String.valueOf(totalTickets), ids.toString(), paymentText(players))).append("\n");
-                  }// end of inner for loop
-               }// end of for loop
-
-               // Display the result
-               if (resultText.isEmpty()) {
-                  displayPlayerStatus.setText("\n\n\t" + Messages.get("status.notFoundNamePhone"));
-               } else {
-                  displayPlayerStatus.setText(resultText.toString());
-               }// end of if block
-            }// end of if block
-         }// end of if block
-      } catch (IOException | NumberFormatException e) {
+         result = TicketLookup.find(Storage.repository().ledger(itemTitle), input);
+      } catch (IOException e) {
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("status.err.read"));
-      }// end of try catch block
+         return;
+      }// end of try-catch block
+
+      displayPlayerStatus.setText(describe(result));
    }// end of handleCheckPlayer method
+
+   // The text shown for what was found
+   private static String describe(TicketLookup.Result result) {
+      return switch (result) {
+         case TicketLookup.Result.NoTickets ignored -> "\n\n\t" + Messages.get("status.notFoundAny");
+         case TicketLookup.Result.UnknownTicket unknown -> "\n\n" + Messages.get("status.notFoundId");
+         case TicketLookup.Result.TicketNotSold notSold -> "\n\n" + Messages.get("status.ticketNotSold", String.valueOf(notSold.id()));
+         case TicketLookup.Result.TicketFound found -> Messages.get("status.found",
+                                                                    found.ticket().getName(),
+                                                                    found.ticket().getPhoneNumber(),
+                                                                    String.valueOf(found.ticket().getNumberOfTickets()),
+                                                                    String.valueOf(found.ticket().getId()),
+                                                                    paymentText(List.of(found.ticket())));
+         case TicketLookup.Result.PhoneFound found -> {
+            StringBuilder text = new StringBuilder(Messages.get("status.phoneHeader", found.phone()));
+            for (TicketLookup.Buyer buyer : found.buyers()) {
+               text.append("\n").append(Messages.get("status.block", buyer.name(), String.valueOf(buyer.tickets().size()),
+                                                      buyer.ticketIds().toString(), paymentText(buyer.tickets())));
+            }// end of for loop
+            yield text.toString();
+         }
+         case TicketLookup.Result.NameFound found -> {
+            StringBuilder text = new StringBuilder();
+            for (TicketLookup.Buyer buyer : found.buyers()) {
+               text.append(Messages.get("status.blockPhone", buyer.name(), buyer.phone(), String.valueOf(buyer.tickets().size()),
+                                        buyer.ticketIds().toString(), paymentText(buyer.tickets()))).append("\n");
+            }// end of for loop
+            yield text.toString();
+         }
+         case TicketLookup.Result.NotFound ignored -> "\n\n\t" + Messages.get("status.notFoundNamePhone");
+      };
+   }// end of describe method
 
    // "paid", "not paid" or "2 of 3 tickets paid" for the tickets of one buyer
    private static String paymentText(List<Player> tickets) {

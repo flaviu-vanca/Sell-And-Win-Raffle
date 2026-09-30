@@ -6,10 +6,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import raffle.models.Item;
+import raffle.services.ItemService;
+import raffle.storage.Storage;
 import raffle.ui.Dialogs;
 import raffle.utils.AppPaths;
 import raffle.utils.ImageFiles;
-import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.Messages;
 
 import java.io.File;
@@ -41,6 +42,7 @@ public class ViewItemController {
    @FXML
    private Button mainPictureButton;
 
+   private final ItemService items = new ItemService(Storage.repository(), AppPaths.root());
    private Item item;
    private List<Path> imageFiles = new ArrayList<>();
    private int currentIndex;
@@ -154,15 +156,12 @@ public class ViewItemController {
          return;
       }// end of if block
 
-      Path catalog = AppPaths.catalogFile();
       try {
-         List<Item> items = ItemDataReaderAndWriter.readItemsFromFile(catalog);
-         String picture = imageFiles.get(currentIndex).toAbsolutePath().toString();
-         items.stream().filter(candidate -> candidate.getTitle().equals(item.getTitle())).findFirst().ifPresent(candidate -> candidate.setImage(picture));
-         ItemDataReaderAndWriter.writeItemsToCSV(items, catalog);
-         item.setImage(picture);
+         Path picture = imageFiles.get(currentIndex);
+         items.setMainPicture(item.getTitle(), picture);
+         item.setImage(picture.toAbsolutePath().toString());
          showAlert(Alert.AlertType.INFORMATION, Messages.get("viewitem.btn.main"), Messages.get("viewitem.mainSet"));
-      } catch (IOException | NumberFormatException e) {
+      } catch (IOException e) {
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.updateCatalog"));
       }// end of try-catch block
    }// end of handleSetMainImage method
