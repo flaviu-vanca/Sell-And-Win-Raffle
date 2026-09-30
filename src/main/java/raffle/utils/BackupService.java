@@ -1,5 +1,7 @@
 package raffle.utils;
 
+import raffle.models.Player;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,6 +59,18 @@ public final class BackupService {
       Path target = deleted.resolve(STAMP.format(LocalDateTime.now()) + "-" + file.getFileName());
       return Files.move(file, target, StandardCopyOption.REPLACE_EXISTING);
    }// end of archive method
+
+   /**
+    * Keeps the ticket ledger of an item that is removed from the application, as a CSV file in
+    * {@code root/backups/deleted/}.
+    */
+   public static Path archiveLedger(Path root, String itemTitle, List<Player> ledger) throws IOException {
+      Path deleted = root.resolve("backups").resolve("deleted");
+      Files.createDirectories(deleted);
+      Path target = deleted.resolve(STAMP.format(LocalDateTime.now()) + "-" + itemTitle + ".csv");
+      PlayerDataReaderAndWriter.writePlayersToCSV(ledger, target);
+      return target;
+   }// end of archiveLedger method
 
    private static void copyFlat(Path sourceDir, Path targetDir) throws IOException {
       Files.createDirectories(targetDir);

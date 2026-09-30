@@ -18,7 +18,7 @@ Desktop raffle ticket management system built with **JavaFX**. Designed for loca
 - Track players and ticket inventory
 - Run a live draw and announce winners
 
-Data is stored locally using **CSV files** and item-specific image folders under the user’s home directory, keeping setup simple and backups straightforward.
+Data is stored locally in a single **SQLite database file** (plus item-specific image folders) under the user’s home directory, so nothing has to be installed or configured, and every change is saved as one all-or-nothing transaction. All data can be exported as CSV files at any time.
 
 ---
 
@@ -35,11 +35,12 @@ Data is stored locally using **CSV files** and item-specific image folders under
 - 🏆 Draw several winners in one sitting, optionally with "one prize per person" (everyone who already won is left out, with all their tickets)
 - 🎉 Made to be shown on a projector: full screen (`F11`, `Esc` to leave), the item picture and name, slowing number roll, confetti, keyboard only (`Space`/`Enter`). Phone numbers are never shown on the draw screen
 - 📜 Every draw is saved to a history file (time, item, ticket, winner)
-- 🛟 Crash-safe saves (write to a temp file, then replace) and an automatic backup on every start-up
+- 🛟 Crash-safe saves (every change is one database transaction) and an automatic backup on every start-up
+- 🗃️ Data in one SQLite file; the CSV files of earlier versions are converted automatically on the first start (and left untouched), and an **Export CSV** button writes everything back out as CSV files for a spreadsheet
 - 📊 A dashboard on the main screen: tickets sold, money collected, money still owed and what selling everything would bring, plus a progress bar and the collected/owed amount for every item
 - 🎨 Dark and light theme, switched with a button on the main screen and remembered; one stylesheet whose colours are variables, so a new theme is a handful of lines
 - 🌍 English and Romanian: every screen is translated, the language follows the system language at first and can be switched with the `RO`/`EN` button on the main screen (the choice is remembered in `settings.properties`). Texts live in `i18n/messages*.properties`
-- 🧰 Package as a **JAR** and a Windows **.exe** (Launch4j)
+- 🧰 Windows **installer** and portable zip with their own Java runtime, built by GitHub Actions
 
 ---
 
@@ -51,7 +52,7 @@ Data is stored locally using **CSV files** and item-specific image folders under
 | 🧩 UI | JavaFX 21, FXML, CSS |
 | 🏗️ Build | Maven |
 | ✅ Testing | JUnit 5 |
-| 💾 Storage | Local CSV files |
+| 💾 Storage | SQLite (`sqlite-jdbc`), CSV import and export |
 | 📦 Packaging | `jpackage` (Windows installer and portable zip with its own Java runtime), built by GitHub Actions |
 
 ---
@@ -108,21 +109,32 @@ At runtime, the application writes data to the user’s home directory:
 ```text
 ~/Sell & Win Raffle/
   data/
-    data.csv
-  records/
-    <item-title>.csv
-    <item-title>.csv.bak      (previous version, kept on every save)
+    raffle.db                 (everything: items, tickets, draw history)
   <item-title>/
     image files...
   settings.properties         (language, theme and currency)
+  exports/
+    <yyyyMMdd-HHmmss>/        (what the Export CSV button writes: data/ and records/ in the CSV layout below)
   backups/
-    <yyyyMMdd-HHmmss>/        (snapshot of data/ and records/ taken at each start-up, newest 20 kept)
-    deleted/                  (ledgers of deleted items are moved here, never destroyed)
+    <yyyyMMdd-HHmmss>/        (snapshot of data/ taken at each start-up, newest 20 kept)
+    deleted/                  (ledgers of deleted items are kept here as CSV, never destroyed)
 ```
 
-### `data/data.csv`
+### The database
 
-Stores the master item catalog with:
+`data/raffle.db` is a SQLite file with three tables: `items` (title, description, picture, price), `tickets` (one row per ticket of an item: buyer name and phone, paid, time of sale) and `draws` (the draw history). How many tickets a buyer holds is worked out from the tickets, not stored. The layout is versioned (`PRAGMA user_version`): a database made by an older version of the application is brought up to date step by step when it is opened, and one made by a *newer* version is refused instead of being damaged.
+
+### Moving from the CSV files of earlier versions
+
+If there is no database yet but `data/data.csv` exists, the first start converts the CSV files into `data/raffle.db` (into a temporary file that only gets its real name once everything was copied and checked), tells you how many items and tickets were moved, and **leaves the CSV files exactly as they were**. If the conversion fails, the CSV files stay in use for that session and a message says why, so nothing is lost and the application never starts empty. A copy of the data is also made in `backups/` before every start.
+
+### CSV files
+
+The CSV layout is still used for the conversion above, for the **Export CSV** button and for the archived ledgers of deleted items:
+
+#### `data/data.csv`
+
+The master item catalog:
 
 - Image path
 - Title
@@ -130,13 +142,13 @@ Stores the master item catalog with:
 - Available tickets
 - Ticket price
 
-### `data/draws.csv`
+#### `data/draws.csv`
 
 Append-only history of every draw: time, item, winning ticket, winner name and phone number.
 
-### `records/<item-title>.csv`
+#### `records/<item-title>.csv`
 
-Stores the ticket ledger for a single raffle item with:
+The ticket ledger of one raffle item:
 
 - Ticket ID
 - Player name
@@ -222,8 +234,10 @@ The UI is split into focused JavaFX controllers:
 All data goes through the `RaffleRepository` interface (`raffle.storage`), so the screens and services do not know where the data lives.
 
 - `RaffleRepository` — items, ticket ledgers and the draw history; every call either completes or fails and leaves the data as it was
-- `CsvRaffleRepository` — the CSV file layout described under *Data Storage*
-- `Storage` — the repository the application runs on
+- `SqliteRaffleRepository` — the database (one transaction per change); `SqliteSchema` holds the versioned table layout and its migrations
+- `CsvRaffleRepository` — the CSV file layout described under *Data Storage*, used for import, export and as a fallback
+- `CsvTransfer` — copies everything from one repository to another (CSV import, CSV export)
+- `Storage` — opens the database at start-up, converting the CSV files of an earlier version when there is no database yet
 
 ### UI helpers
 
@@ -295,7 +309,7 @@ The repository contains automated tests for:
 - Draw logic (only sold tickets win, exclusions, chance proportional to tickets held, several winners, one prize per person)
 - Draw history
 - Selling and taking back tickets (random distinct tickets, several purchases by one buyer, totals per buyer), items (creation, duplicates, pictures, deletion with archived ledger) and the status lookup
-- The storage contract: every repository implementation must pass the same tests
+- The storage contract: the CSV and the SQLite repository must pass the same tests; the database layout and its versioning, the conversion of CSV files on the first start (including a failing one), and CSV export/import round trips
 - CSV reading and writing, including files from older versions
 - Atomic saves and backups
 - Phone validation, settings, money formatting and localized messages
@@ -303,7 +317,7 @@ The repository contains automated tests for:
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 25 test classes, 140 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
+Current test suite: 28 test classes, 171 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
 
 ---
 
@@ -355,7 +369,7 @@ The JavaFX UI currently includes these views:
 
 ## ⚠️ Current Limitations
 
-- CSV-based persistence (not database-backed)
+- One operator at a time: the database file is opened by one running copy of the application
 - Designed for local use (not multi-user)
 - Images managed through the local file system
 
@@ -363,7 +377,6 @@ The JavaFX UI currently includes these views:
 
 ## 🛣️ Future Improvements
 
-- Replace CSV storage with a local SQLite database, with an optional remote connection
-- Add sales reports and export features
-- Add installer-based distribution for non-technical operators
-- Track draw history and operational audit logs
+- An optional remote connection (several operators on one raffle)
+- Sales reports, PDF export, winner certificates and ticket receipts
+- Editing an item after it was created (price, description, number of tickets)

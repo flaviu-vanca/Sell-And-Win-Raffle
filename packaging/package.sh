@@ -51,6 +51,10 @@ for type in "${types[@]}"; do
    args=(--type "$type" --name "$NAME" --app-version "$version"
          --vendor "Flaviu Vanca" --description "Raffle management and live draw"
          --module-path target/modules --module "$MODULE/$MAIN_CLASS"
+         # A trimmed runtime only knows English number and date formats: add the languages of the application
+         # (keep in step with Messages.SUPPORTED). --jlink-options replaces jpackage's defaults, so they are repeated.
+         --add-modules jdk.localedata
+         --jlink-options "--strip-native-commands --strip-debug --no-man-pages --no-header-files --include-locales=en,ro"
          --dest target/dist)
    [ -z "$icon" ] || args+=(--icon "$icon")
    if [ "$windows" = 1 ] && [ "$type" != "app-image" ]; then

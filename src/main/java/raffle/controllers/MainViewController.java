@@ -19,6 +19,7 @@ import raffle.services.ItemOverview;
 import raffle.services.ItemSales;
 import raffle.services.ItemService;
 import raffle.services.SalesSummary;
+import raffle.storage.CsvTransfer;
 import raffle.storage.Storage;
 import raffle.ui.Theme;
 import raffle.utils.AppPaths;
@@ -28,6 +29,7 @@ import raffle.utils.Money;
 import raffle.ui.Dialogs;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -69,6 +71,8 @@ public class MainViewController {
    private Button viewItemButton;
    @FXML
    private Button refreshListButton;
+   @FXML
+   private Button exportButton;
    @FXML
    private Button languageButton;
    @FXML
@@ -211,6 +215,7 @@ public class MainViewController {
       addTooltip(refreshListButton, Messages.get("main.tip.refresh"));
       addTooltip(buyTicketsButton, Messages.get("main.tip.buy"));
       addTooltip(viewItemButton, Messages.get("main.tip.view"));
+      addTooltip(exportButton, Messages.get("main.tip.export"));
       addTooltip(languageButton, Messages.get("main.tip.language"));
       languageButton.setText(Messages.other().getLanguage().toUpperCase(Locale.ROOT));// shows the language it switches to
       addTooltip(themeButton, Messages.get("main.tip.theme"));
@@ -371,6 +376,17 @@ public class MainViewController {
       Theme.toggle();
       app.showMainView();
    }//end of handleToggleTheme method
+
+   // Write all the data as CSV files (a spreadsheet can open them) into a new folder
+   @FXML
+   private void handleExport() {
+      try {
+         Path folder = CsvTransfer.exportTo(Storage.repository(), AppPaths.exportsDir());
+         Dialogs.show(Alert.AlertType.INFORMATION, Messages.get("main.btn.export"), Messages.get("storage.exported", folder.toString()));
+      } catch (IOException e) {
+         Dialogs.show(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("storage.exportFailed", String.valueOf(e.getMessage())));
+      }// end of try-catch block
+   }//end of handleExport method
 
    @FXML
    private void handleRefreshList() {

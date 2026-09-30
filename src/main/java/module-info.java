@@ -1,6 +1,8 @@
 module raffle.sellandwinraffle {
    requires javafx.controls;
    requires javafx.fxml;
+   requires java.sql;
+   requires org.xerial.sqlitejdbc;
 
    opens fxml_files to javafx.fxml;
    exports raffle.controllers;

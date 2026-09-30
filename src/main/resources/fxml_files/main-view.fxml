@@ -84,6 +84,7 @@
     <Button fx:id="buyTicketsButton" onAction="#handleBuyTickets" styleClass="button" text="%main.btn.buy" />
     <Button fx:id="drawButton" onAction="#handleDraw" styleClass="button" text="%main.btn.draw" />
     <Button fx:id="refreshListButton" onAction="#handleRefreshList" styleClass="button" text="%main.btn.refresh" />
+    <Button fx:id="exportButton" onAction="#handleExport" styleClass="button" text="%main.btn.export" />
     <Button fx:id="languageButton" onAction="#handleToggleLanguage" styleClass="button" />
     <Button fx:id="themeButton" onAction="#handleToggleTheme" styleClass="button" />
     <VBox.margin>

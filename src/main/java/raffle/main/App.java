@@ -47,6 +47,14 @@ public class App extends Application {
          System.err.println(Messages.get("backup.failed") + " " + e.getMessage());
       }// end of try-catch block
 
+      try {
+         Storage.open(AppPaths.root());
+      } catch (IOException e) {
+         e.printStackTrace();// the dialog says what failed, the stack trace says why
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.storage", String.valueOf(e.getMessage())), true);
+         return;
+      }// end of try-catch block
+
       showLoadingView();
    }// end of start method
 
@@ -89,6 +97,10 @@ public class App extends Application {
             loadingStage.close();
             try {
                showMainView();
+               Storage.takeNotice().ifPresent(notice -> Dialogs.showLater(
+                       notice.warning() ? Alert.AlertType.WARNING : Alert.AlertType.INFORMATION,
+                       Messages.get(notice.warning() ? "alert.title.warning" : "storage.notice.title"),
+                       Messages.get(notice.messageKey(), notice.arguments())));
             } catch (Exception e) {
                e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadApp"), true);
