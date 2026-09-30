@@ -54,6 +54,14 @@ public class Player {
       return buyer != null && ! buyer.isBlank();
    }
 
+   /**
+    * Identifies the person behind a ticket: the ledger stores one row per ticket, so a buyer with three
+    * tickets appears three times with the same name and phone number.
+    */
+   public String buyerKey() {
+      return name.get().strip().toLowerCase(java.util.Locale.ROOT) + "|" + phoneNumber.get().strip();
+   }
+
    public void setName(String name) {
       this.name.set(name);
    }

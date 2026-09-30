@@ -39,13 +39,26 @@ public final class RaffleDraw {
     * @return the winning ticket row, or empty when no eligible ticket exists
     */
    public Optional<Player> pickWinner(List<Player> ledger, Set<Integer> excludedTicketIds) {
-      List<Player> eligible = soldTickets(ledger).stream()
-                                                 .filter(ticket -> ! excludedTicketIds.contains(ticket.getId()))
-                                                 .toList();
+      return pickWinner(ledger, excludedTicketIds, Set.of());
+   }// end of pickWinner method
+
+   /**
+    * @param excludedBuyers {@link Player#buyerKey() buyer keys} whose tickets must all stay out of the draw,
+    *                       which gives "one prize per person"
+    */
+   public Optional<Player> pickWinner(List<Player> ledger, Set<Integer> excludedTicketIds, Set<String> excludedBuyers) {
+      List<Player> eligible = eligibleTickets(ledger, excludedTicketIds, excludedBuyers);
       if (eligible.isEmpty()) {
          return Optional.empty();
       }// end of if block
       return Optional.of(eligible.get(random.nextInt(eligible.size())));
    }// end of pickWinner method
+
+   public static List<Player> eligibleTickets(List<Player> ledger, Set<Integer> excludedTicketIds, Set<String> excludedBuyers) {
+      return soldTickets(ledger).stream()
+                                .filter(ticket -> ! excludedTicketIds.contains(ticket.getId()))
+                                .filter(ticket -> ! excludedBuyers.contains(ticket.buyerKey()))
+                                .toList();
+   }// end of eligibleTickets method
 
 }// end of RaffleDraw class

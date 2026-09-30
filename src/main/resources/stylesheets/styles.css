@@ -149,7 +149,7 @@
     -fx-border-width: 2;
     -fx-border-radius: 15;
     -fx-border-color: #9c7945;
-    -fx-font-size: 22px;
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
 }
 
@@ -158,23 +158,94 @@
     -fx-background-color: #2980b9;
 }
 
-.draw-view .label {
-    /* style the labels in the draw view */
+.draw-view .draw-title {
+    /* item being drawn */
+    -fx-font-size: 44px;
+    -fx-text-fill: white;
+}
+
+.draw-view .draw-subtitle {
+    /* "5 of 20 tickets sold" */
+    -fx-font-size: 24px;
+    -fx-text-fill: #d6c3a0;
+}
+
+.draw-view .draw-number {
+    /* the rolling ticket number */
     -fx-font-size: 150px;
-    -fx-border-radius: 15;
+    -fx-text-fill: #00ffea;
+    -fx-background-color: rgba(0, 0, 0, 0.25);
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
     -fx-border-width: 2;
     -fx-border-color: #9c7945;
+}
+
+.draw-view .draw-number.revealed {
+    /* the number has landed on the winner */
+    -fx-text-fill: #ffd700;
+    -fx-border-color: #ffd700;
+    -fx-effect: dropshadow(gaussian, rgba(255, 215, 0, 0.85), 40, 0.35, 0, 0);
+}
+
+.draw-view .draw-panel {
+    -fx-background-color: rgba(0, 0, 0, 0.18);
+    -fx-background-radius: 18;
+    -fx-border-radius: 18;
+    -fx-border-width: 2;
+    -fx-border-color: #9c7945;
+    -fx-padding: 8 16 8 16;
+}
+
+.draw-view .draw-winner {
+    -fx-font-size: 46px;
     -fx-text-fill: #00ffea;
 }
 
-.draw-view #winner {
-    /* style the winner label in the draw view */
-    -fx-font-size: 60px;
-    -fx-border-radius: 15;
-    -fx-border-width: 2;
-    -fx-border-color: #9c7945;
-    -fx-text-fill: #00ffea;
+.draw-view .draw-winners-list {
+    -fx-font-size: 22px;
+    -fx-text-fill: #d6c3a0;
+}
 
+.draw-view .draw-option-label {
+    -fx-font-size: 20px;
+    -fx-text-fill: #d6c3a0;
+}
+
+.draw-view .check-box {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #d6c3a0;
+}
+
+.draw-view .check-box .box {
+    -fx-background-color: #2c3e50;
+    -fx-border-color: #9c7945;
+}
+
+.draw-view .check-box:selected .mark {
+    -fx-background-color: #00ffea;
+}
+
+.draw-view .spinner .text-field {
+    -fx-font-size: 20px;
+    -fx-alignment: center;
+}
+
+.draw-view .button.draw-primary {
+    /* the one button that runs the draw */
+    -fx-font-size: 24px;
+    -fx-background-color: linear-gradient(#f3d57a, #9c7945);
+    -fx-min-width: 200px;
+    -fx-pref-height: 56px;
+}
+
+.draw-view .button.draw-primary:hover {
+    -fx-background-color: linear-gradient(#ffe38f, #b38a4e);
+}
+
+.draw-view .button:disabled {
+    -fx-opacity: 0.45;
 }
 
 .player-status {

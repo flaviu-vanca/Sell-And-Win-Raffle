@@ -31,6 +31,8 @@ Data is stored locally using **CSV files** and item-specific image folders under
 - 📦 Track remaining ticket inventory per item
 - 🔎 Search player status by name, phone number, or ticket ID
 - 🎲 Run a live draw: the winner is picked with a secure random generator, only among tickets that were actually sold
+- 🏆 Draw several winners in one sitting, optionally with "one prize per person" (everyone who already won is left out, with all their tickets)
+- 🎉 Made to be shown on a projector: full screen (`F11`, `Esc` to leave), the item picture and name, slowing number roll, confetti, keyboard only (`Space`/`Enter`). Phone numbers are never shown on the draw screen
 - 📜 Every draw is saved to a history file (time, item, ticket, winner)
 - 🛟 Crash-safe saves (write to a temp file, then replace) and an automatic backup on every start-up
 - 🌍 English and Romanian: every screen is translated, the language follows the system language at first and can be switched with the `RO`/`EN` button on the main screen (the choice is remembered in `settings.properties`). Texts live in `i18n/messages*.properties`
@@ -92,10 +94,7 @@ The player status screen supports searching by:
 
 ### 5) Run the draw
 
-The draw screen animates ticket number generation and stops on the selected ticket:
-
-- If the ticket belongs to a player, the winner is displayed.
-- If the ticket has not been sold, the UI clearly indicates that outcome.
+Choose how many winners to draw and whether one person can win only once, then press **Start** and **Stop** (or `Space`). The numbers slow down and land on the winner, which is picked at the moment of Stop from the sold tickets only, so the timing of the click cannot influence it. Winners are listed as they are drawn; **New draw** starts a fresh sitting. Every winner is appended to `data/draws.csv`.
 
 ---
 
@@ -154,6 +153,7 @@ src/
         main/
         models/
         services/
+        ui/
         utils/
     resources/
       fxml_files/
@@ -197,7 +197,13 @@ The UI is split into focused JavaFX controllers:
 ### Services
 
 - `RaffleDraw` — picks the winner (secure random, sold tickets only, optional exclusions); no JavaFX, fully unit tested
+- `DrawSession` — one sitting: how many winners, who has won, who can still win ("one prize per person")
 - `DrawHistory` — append-only audit log of draws
+
+### UI helpers
+
+- `ConfettiCanvas` — the confetti overlay of the draw screen
+- `ItemImages` — item picture, or the bundled logo when there is none
 
 ### Persistence and utilities
 
@@ -258,7 +264,7 @@ mvn clean package
 
 The repository contains automated tests for:
 
-- Draw logic (only sold tickets win, exclusions, chance proportional to tickets held)
+- Draw logic (only sold tickets win, exclusions, chance proportional to tickets held, several winners, one prize per person)
 - Draw history
 - CSV reading and writing, including files from older versions
 - Atomic saves and backups
@@ -266,7 +272,7 @@ The repository contains automated tests for:
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 13 test classes, 54 JUnit tests (`mvn test`). The controllers are not unit tested yet.
+Current test suite: 14 test classes, 61 JUnit tests (`mvn test`). The controllers are not unit tested yet.
 
 ---
 

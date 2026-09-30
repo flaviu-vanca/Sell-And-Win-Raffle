@@ -92,6 +92,7 @@ public class App extends Application {
    // Method to show the Main View
    public void showMainView() {
       try {
+         primaryStage.setFullScreen(false);// the draw screen can be shown full screen
          FXMLLoader loader = Fxml.loader("/fxml_files/main-view.fxml");
          Scene scene = new Scene(loader.load());
          primaryStage.setScene(scene);

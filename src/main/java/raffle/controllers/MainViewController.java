@@ -15,6 +15,7 @@ import raffle.models.Item;
 import raffle.utils.AppPaths;
 import raffle.utils.BackupService;
 import raffle.utils.ItemDataReaderAndWriter;
+import raffle.utils.ItemImages;
 import raffle.utils.Messages;
 
 import java.io.File;
@@ -73,7 +74,7 @@ public class MainViewController {
                      setGraphic(null);
                   } else {
                      try {
-                        Image image = loadItemImage(imagePath);
+                        Image image = ItemImages.load(imagePath, 250, 250);
                         imageView.setImage(image);
                         imageView.setFitWidth(250);
                         imageView.setFitHeight(250);
@@ -324,14 +325,6 @@ public class MainViewController {
          }//end of try-catch block
       }//end of if block
    }//end of archiveRecords method
-
-   // Item image, or the bundled logo when the item has no image (or the file is gone)
-   private Image loadItemImage(String imagePath) {
-      if (imagePath != null && ! imagePath.isBlank() && Files.isRegularFile(Paths.get(imagePath))) {
-         return new Image(Paths.get(imagePath).toUri().toString(), 250, 250, true, true);
-      }// end of if block
-      return new Image(Objects.requireNonNull(getClass().getResourceAsStream("/icons/logo.png")), 250, 250, true, true);
-   }//end of loadItemImage method
 
    @FXML
    private void handleViewItem(){
