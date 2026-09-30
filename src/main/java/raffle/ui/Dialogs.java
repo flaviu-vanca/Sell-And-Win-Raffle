@@ -22,9 +22,13 @@ public final class Dialogs {
       return alert;
    }// end of build method
 
-   /** Shows a message and waits for it to be closed. */
+   /**
+    * Shows a message and waits for it to be closed. A "confirmation" message is only a notice that something
+    * worked, so it gets the single OK button of an information dialog (questions go through {@link #confirm}).
+    */
    public static void show(Alert.AlertType type, String title, String message) {
-      build(type, title, null, message).showAndWait();
+      Alert.AlertType shown = type == Alert.AlertType.CONFIRMATION ? Alert.AlertType.INFORMATION : type;
+      build(shown, title, null, message).showAndWait();
    }// end of show method
 
    /**

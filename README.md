@@ -25,7 +25,7 @@ Data is stored locally using **CSV files** and item-specific image folders under
 ## ✨ Key Features
 
 - 🏷️ Create raffle items with title, description, ticket count, and ticket price
-- 🖼️ Store and browse item images (with a configurable default image)
+- 🖼️ Pictures without copying files by hand: choose the item's picture from anywhere on the computer (it is copied into the item's folder), add more pictures later and pick the main one from the View Item screen
 - 👤 Sell tickets to players and auto-assign ticket IDs
 - 💶 Price per ticket, the amount to pay shown while typing, "paid now" or owed, and a per-item summary of money collected and still outstanding; mark a buyer's tickets as paid or unpaid later
 - ♻️ Reuse ticket IDs when player records are removed
@@ -223,6 +223,7 @@ The UI is split into focused JavaFX controllers:
 - `BackupService` — start-up snapshots and archiving of deleted items
 - `AppPaths` — the one place that knows where data lives
 - `Money` — amounts in the active language and the `currency` setting (EUR by default, for example `currency=RON` in `settings.properties`)
+- `ImageFiles` — listing item pictures and copying new ones in without ever overwriting
 - `PhoneNumbers` — phone validation and normalisation (kept as text, 7–15 digits, optional `+`)
 - `Messages`, `AppSettings`, `Fxml` — localized text from the resource bundles, the saved language, and FXML loading with the active bundle
 
@@ -285,7 +286,7 @@ The repository contains automated tests for:
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 19 test classes, 84 JUnit tests (`mvn test`). The controllers are not unit tested yet.
+Current test suite: 20 test classes, 89 JUnit tests (`mvn test`). The controllers are not unit tested yet.
 
 ---
 
@@ -332,4 +333,3 @@ The JavaFX UI currently includes these views:
 - Add sales reports and export features
 - Add installer-based distribution for non-technical operators
 - Track draw history and operational audit logs
-- Improve image management and default image workflows

@@ -2,13 +2,13 @@ package raffle.controllers;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import raffle.models.Item;
 import raffle.models.Player;
 import raffle.utils.AppPaths;
+import raffle.utils.ImageFiles;
+import raffle.utils.ItemImages;
 import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.PlayerDataReaderAndWriter;
 import raffle.utils.Messages;
@@ -18,10 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -44,7 +42,7 @@ public class AddItemController {
    @FXML
    private ImageView itemImageView;
 
-   private String imagePath;
+   private Path chosenImage;
    private String title;
 
    @FXML
@@ -60,66 +58,25 @@ public class AddItemController {
 
    }// end of initialize method
 
+   // Pick the item's picture from anywhere on the computer. It is copied into the item's folder when the item is
+   // added, so nothing has to be copied by hand.
    @FXML
    private void handleAddImage() {
-      // Get the title from the title text field
-      Path appDirectoryPath = AppPaths.root();
-      Path dataFilePath = AppPaths.catalogFile();
-
-      // Create a file chooser dialog
       FileChooser fileChooser = new FileChooser();
       fileChooser.setTitle(Messages.get("additem.chooser.title"));
-      fileChooser.getExtensionFilters().addAll(
-              new FileChooser.ExtensionFilter(Messages.get("additem.chooser.filter"), "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.tiff", "*.webp")
-      );
+      fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(Messages.get("additem.chooser.filter"), ImageFiles.chooserPatterns()));
 
-      // Set initial directory to the app's directory
-      fileChooser.setInitialDirectory(appDirectoryPath.toFile());
+      File pictures = new File(System.getProperty("user.home"), "Pictures");
+      File start = pictures.isDirectory() ? pictures : new File(System.getProperty("user.home"));
+      if (start.isDirectory()) {
+         fileChooser.setInitialDirectory(start);
+      }// end of if block
 
-      // Show the file chooser dialog
-      Stage stage = (Stage) addDDefaultImageButton.getScene().getWindow();
-      File selectedFile = fileChooser.showOpenDialog(stage);
-
+      File selectedFile = fileChooser.showOpenDialog(addDDefaultImageButton.getScene().getWindow());
       if (selectedFile != null) {
-         // Extract the title from the path
-         Path relativePath = appDirectoryPath.relativize(selectedFile.toPath());
-         String[] pathParts = relativePath.toString().split(Pattern.quote(File.separator));
-         if (pathParts.length > 1) {
-            title = pathParts[0];
-         }// end of if statement
-
-         // Check if the selected directory matches the title
-         if (! selectedFile.getParentFile().getName().equals(title)) {
-            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("additem.err.wrongDir"));
-            return;
-         }// end of if statement
-
-         imagePath = selectedFile.getAbsolutePath();
-         Image image = new Image(selectedFile.toURI().toString());
-         itemImageView.setImage(image);
-
-         // Read the data.csv and match titles
-         try {
-            List<Item> existingItems = ItemDataReaderAndWriter.readItemsFromFile(dataFilePath);
-            final String itemTitle = title;
-            boolean updated = existingItems.stream()
-                                           .filter(item -> item.getTitle().equals(itemTitle))
-                                           .findFirst()
-                                           .map(item -> {
-                                              item.setImage(imagePath);// Update the image path
-                                              return true;
-                                           })
-                                           .orElse(false);
-            if (updated) {
-               ItemDataReaderAndWriter.writeItemsToCSV(existingItems, dataFilePath);
-               showAlert(Alert.AlertType.CONFIRMATION, Messages.get("additem.imageUpdated.title"), Messages.get("additem.imageUpdated"));
-            } else {
-               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("additem.err.imagePath"));
-            }// end of if-else block
-         } catch (IOException e) {
-            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.updateCatalog"));
-         }// end of try-catch block
-      }// end of if statement
+         chosenImage = selectedFile.toPath();
+         itemImageView.setImage(ItemImages.load(selectedFile.getAbsolutePath(), 800, 600));
+      }// end of if block
    }// end of handleAddImage method
 
    @FXML
@@ -195,15 +152,21 @@ public class AddItemController {
       }
 
       // Create the directory and the records directory
+      Path copiedImage = null;
       try {
          Files.createDirectories(path);
          Files.createDirectories(recordsPath);
 
+         // The chosen picture goes into the item's own folder
+         if (chosenImage != null) {
+            copiedImage = ImageFiles.copyInto(path, chosenImage);
+         }// end of if block
+
          // One empty ledger row per ticket
          PlayerDataReaderAndWriter.writePlayersToCSV(generateEmptyTickets(numberOfTickets), csvFilePath);
 
-         // Create a new item (no image yet: stored as empty text, the main view shows the default logo)
-         Item newItem = new Item(imagePath == null ? "" : imagePath, title, description, numberOfTickets, ticketPrice);
+         // Create a new item (without a picture it is stored as empty text and the screens show the logo)
+         Item newItem = new Item(copiedImage == null ? "" : copiedImage.toString(), title, description, numberOfTickets, ticketPrice);
 
          // Add it to the catalog, creating the data directory and data.csv on first use
          Path dataFilePath = AppPaths.catalogFile();
@@ -215,6 +178,9 @@ public class AddItemController {
          // Do not leave a half created item behind: it would block adding the same title again
          try {
             Files.deleteIfExists(csvFilePath);
+            if (copiedImage != null) {
+               Files.deleteIfExists(copiedImage);
+            }// end of if block
             Files.deleteIfExists(path);
          } catch (IOException ignored) {
             // nothing more can be done here
@@ -224,7 +190,8 @@ public class AddItemController {
       }// end of try-catch block
 
       // Show a confirmation message
-      showAlert(Alert.AlertType.CONFIRMATION, Messages.get("additem.added.title"), Messages.get("additem.added", title, path));
+      showAlert(Alert.AlertType.CONFIRMATION, Messages.get("additem.added.title"), Messages.get("additem.added", title));
+      handleClearFields();
 
    }// end of handleAddItem method
 
@@ -247,8 +214,8 @@ public class AddItemController {
       descriptionTextField.clear();
       numberOfTicketsTextField.clear();
       ticketPriceTextField.clear();
-      itemImageView.setImage(null);
-      imagePath = null;
+      itemImageView.setImage(ItemImages.load(null, 800, 600));// back to the logo
+      chosenImage = null;
    }// end of handleClearFields method
 
    // Add a tooltip to a control

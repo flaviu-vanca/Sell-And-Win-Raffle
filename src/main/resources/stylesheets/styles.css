@@ -64,6 +64,12 @@
     -fx-text-fill: -app-text;
 }
 
+.text-field,
+.text-area {
+    /* hint text must stay readable on the dark surface (the default is derived from the field colour) */
+    -fx-prompt-text-fill: -app-text-muted;
+}
+
 .text-field {
     -fx-font-size: 20px;
     -fx-background-radius: 10;
@@ -402,4 +408,10 @@
 .cell-owed {
     -fx-font-size: 14px;
     -fx-text-fill: -app-warn;
+}
+
+.view-item .view-counter {
+    -fx-font-size: 18px;
+    -fx-border-width: 0;
+    -fx-text-fill: -app-text-muted;
 }
