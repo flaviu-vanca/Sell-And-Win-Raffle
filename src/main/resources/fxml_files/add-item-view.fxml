@@ -6,6 +6,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
@@ -44,40 +45,37 @@
             <padding>
                 <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
             </padding>
-            <TextField fx:id="titleTextField" promptText="Title" HBox.hgrow="ALWAYS">
+            <TextField fx:id="titleTextField" promptText="%additem.prompt.title" HBox.hgrow="ALWAYS">
                 <HBox.margin>
                     <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="descriptionTextField" promptText="Description" HBox.hgrow="ALWAYS">
+            <TextField fx:id="descriptionTextField" promptText="%additem.prompt.description" HBox.hgrow="ALWAYS">
                 <HBox.margin>
                     <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="numberOfTicketsTextField" promptText="Tickets" HBox.hgrow="ALWAYS">
+            <TextField fx:id="numberOfTicketsTextField" promptText="%additem.prompt.tickets" HBox.hgrow="ALWAYS">
                 <HBox.margin>
                     <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
                 </HBox.margin>
             </TextField>
-            <TextField fx:id="ticketPriceTextField" promptText="Ticket Price" HBox.hgrow="ALWAYS">
+            <TextField fx:id="ticketPriceTextField" promptText="%additem.prompt.price" HBox.hgrow="ALWAYS">
                 <HBox.margin>
                     <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
                 </HBox.margin>
             </TextField>
         </HBox>
-        <HBox alignment="CENTER" maxHeight="75.0" prefHeight="75.0" prefWidth="800.0" spacing="140.0"
-              styleClass="h-box">
-            <Button fx:id="addDDefaultImageButton" onAction="#handleAddImage" text="Add Default Image"
-                    HBox.hgrow="ALWAYS"/>
-            <Button fx:id="addItemButton" onAction="#handleAddItem" text="Add Item" HBox.hgrow="ALWAYS"/>
-            <Button fx:id="clearFieldsButton" onAction="#handleClearFields" text="Clear Fields"
-                    HBox.hgrow="ALWAYS"/>
+        <FlowPane alignment="CENTER" hgap="40.0" vgap="8.0" styleClass="h-box">
+            <Button fx:id="addDDefaultImageButton" onAction="#handleAddImage" text="%additem.btn.image"/>
+            <Button fx:id="addItemButton" onAction="#handleAddItem" text="%additem.btn.add"/>
+            <Button fx:id="clearFieldsButton" onAction="#handleClearFields" text="%additem.btn.clear"/>
             <padding>
                 <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
             </padding>
             <VBox.margin>
                 <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
             </VBox.margin>
-        </HBox>
+        </FlowPane>
     </VBox>
 </VBox>

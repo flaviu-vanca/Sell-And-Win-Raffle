@@ -15,6 +15,7 @@ import raffle.models.Player;
 import raffle.services.DrawHistory;
 import raffle.services.RaffleDraw;
 import raffle.utils.AppPaths;
+import raffle.utils.Fxml;
 import raffle.utils.Messages;
 import raffle.utils.PlayerDataReaderAndWriter;
 
@@ -56,10 +57,10 @@ public class DrawController {
 
    @FXML
    private void initialize() {
-      addTooltip(checkPlayerStatus, "Check Player's Status");
-      addTooltip(startStopButton, "Start the Number Generation.\nStop the Number Generation to Pick a Winner");
-      addTooltip(generatedNumber, "Last Generated Number");
-      addTooltip(winerLabel, "Winner of the Draw");
+      addTooltip(checkPlayerStatus, Messages.get("draw.tip.status"));
+      addTooltip(startStopButton, Messages.get("draw.tip.startStop"));
+      addTooltip(generatedNumber, Messages.get("draw.tip.number"));
+      addTooltip(winerLabel, Messages.get("draw.tip.winner"));
       startStopButton.setText(Messages.get("draw.start"));
       winerLabel.setWrapText(true);// longer translations must wrap instead of being cut off with "..."
 
@@ -100,7 +101,7 @@ public class DrawController {
 
       winerLabel.setText(Messages.get("draw.rolling"));
       startStopButton.setText(Messages.get("draw.stop"));
-      startStopButton.getTooltip().setText("Stop the number generation and pick a winner !");
+      startStopButton.getTooltip().setText(Messages.get("draw.tip.stopNow"));
    }// end of startRolling method
 
    // Pick the winner at the moment of Stop, then let the numbers slow down and land on it
@@ -133,14 +134,14 @@ public class DrawController {
       try {
          drawHistory.record(itemTitle, winner, Instant.now());
       } catch (IOException e) {
-         showAlert(Alert.AlertType.WARNING, "Warning", Messages.get("draw.saveFailed"));
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.warning"), Messages.get("draw.saveFailed"));
       }// end of try-catch block
    }// end of showWinner method
 
    private void resetButton() {
       startStopButton.setDisable(false);
       startStopButton.setText(Messages.get("draw.start"));
-      startStopButton.getTooltip().setText("Start the number generation !");
+      startStopButton.getTooltip().setText(Messages.get("draw.tip.startNow"));
    }// end of resetButton method
 
    private String randomSoldTicketId() {
@@ -168,14 +169,14 @@ public class DrawController {
       stage.hide();
 
       // Load the FXML file for the Player Status window
-      FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml_files/player-status-view.fxml"));
+      FXMLLoader loader = Fxml.loader("/fxml_files/player-status-view.fxml");
 
       // Create a new scene with the loaded FXML file
       Scene scene = new Scene(loader.load());
 
       // Create a new stage for the Player Status window
       Stage newStage = new Stage();
-      newStage.setTitle("Player Status");
+      newStage.setTitle(Messages.get("status.window.title"));
       newStage.setScene(scene);
 
       // Get the controller for the Player Status window and set the main app
@@ -209,7 +210,7 @@ public class DrawController {
    // Set the item in the controller
    public void setItem(Item selectedItem) {
       if (selectedItem == null || selectedItem.getTitle() == null) {
-         showAlert(Alert.AlertType.ERROR, "Error", "Item title is null. Please set the item title before setting the item !");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("draw.err.noTitle"));
          return;
       }// end of if block
 
@@ -221,7 +222,7 @@ public class DrawController {
          soldTickets = RaffleDraw.soldTickets(ledger);
       } catch (IOException | NumberFormatException e) {
          soldTickets = List.of();
-         showAlert(Alert.AlertType.ERROR, "Error", Messages.get("draw.loadFailed"));
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("draw.loadFailed"));
       }// end of try-catch block
 
       generatedNumber.setText(Messages.get("draw.unknownNumber"));

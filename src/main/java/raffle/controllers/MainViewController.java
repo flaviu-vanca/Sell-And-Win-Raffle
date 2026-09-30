@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -50,6 +51,8 @@ public class MainViewController {
    private Button viewItemButton;
    @FXML
    private Button refreshListButton;
+   @FXML
+   private Button languageButton;
 
    private App app;
    private ObservableList<Item> itemList;
@@ -126,33 +129,31 @@ public class MainViewController {
             if (empty) {
                setText(null);
             } else {
-               setText(String.format("\u20AC%.2f", item));
+               setText(String.format(Messages.locale(), "\u20AC%.2f", item));// 15.00 or 15,00 depending on the language
                setStyle("-fx-alignment: CENTER; -fx-font-size: 30px; -fx-font-weight: bold;");
             }//end of if-else block
          }//end of updateItem method
       });// end of priceColumn.setCellFactory method
 
       // Add tooltips to the buttons
-      addTooltip(addItemButton, "Add a New Item to the Raffle List");
-      addTooltip(deleteItemButton, "Delete the Selected Item from the Raffle List");
-      addTooltip(drawButton, "Draw a winner");
-      addTooltip(refreshListButton, "Refresh the List of Items");
-      addTooltip(buyTicketsButton, "Buy Tickets for the Selected Item");
-      addTooltip(viewItemButton, "View Images and Description of the Selected Item");
+      addTooltip(addItemButton, Messages.get("main.tip.add"));
+      addTooltip(deleteItemButton, Messages.get("main.tip.delete"));
+      addTooltip(drawButton, Messages.get("main.tip.draw"));
+      addTooltip(refreshListButton, Messages.get("main.tip.refresh"));
+      addTooltip(buyTicketsButton, Messages.get("main.tip.buy"));
+      addTooltip(viewItemButton, Messages.get("main.tip.view"));
+      addTooltip(languageButton, Messages.get("main.tip.language"));
+      languageButton.setText(Messages.other().getLanguage().toUpperCase(Locale.ROOT));// shows the language it switches to
 
       loadItemsFromCSV();
+
+      // Bind column widths to the table's width (also applied once right away, not only after a resize)
+      itemTable.widthProperty().addListener((obs, oldWidth, newWidth) -> applyColumnWidths(newWidth.doubleValue()));
 
       Platform.runLater(() -> {
          Stage stage = (Stage) itemTable.getScene().getWindow();
 
-         // Bind column widths to the table's width
-         itemTable.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            double tableWidth = newWidth.doubleValue();
-            imageColumn.setPrefWidth(tableWidth * 0.33);// 33% of table width
-            titleColumn.setPrefWidth(tableWidth * 0.37);// 37% of table width
-            ticketsColumn.setPrefWidth(tableWidth * 0.15);// 15% of table width
-            priceColumn.setPrefWidth(tableWidth * 0.15);// 15% of table width
-         });// end of itemTable.widthProperty method
+         applyColumnWidths(itemTable.getWidth());
 
          // Ensure the table resizes with the window
          stage.widthProperty().addListener((obs, oldVal, newVal) -> itemTable.setPrefWidth(newVal.doubleValue()));
@@ -160,25 +161,36 @@ public class MainViewController {
       });
    }// end of initialize method
 
+   // Columns share the table width; 4% is left for the vertical scrollbar so no horizontal scrollbar appears
+   private void applyColumnWidths(double tableWidth) {
+      if (tableWidth <= 0) {
+         return;
+      }//end of if block
+      imageColumn.setPrefWidth(tableWidth * 0.29);
+      titleColumn.setPrefWidth(tableWidth * 0.33);
+      ticketsColumn.setPrefWidth(tableWidth * 0.17);
+      priceColumn.setPrefWidth(tableWidth * 0.17);
+   }//end of applyColumnWidths method
+
    @FXML
    private void handleBuyTickets() {
       // Check if the list is null or empty for initialization
       if (itemList == null || itemList.isEmpty()) {
-         showAlert(Alert.AlertType.INFORMATION, "Initialization Needed", "Please add items to initialize the application !");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.initNeeded"), Messages.get("main.initNeeded"));
          return;
       }//end of if block
 
       // Check if there is a selected item
       Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
       if (selectedItem == null) {
-         showAlert(Alert.AlertType.INFORMATION, "No Selection", "Select an item to buy tickets for !");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.noSelection"), Messages.get("main.selectToBuy"));
          return;
       }
 
       try {
          app.showAddPlayerView(selectedItem);
       } catch (Exception e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while trying to open the AddPlayer window !");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("main.err.openBuy"));
       }//end of try-catch block
    }// end of handleBuyTickets method
 
@@ -192,12 +204,12 @@ public class MainViewController {
             itemList = FXCollections.observableArrayList(items);
             itemTable.setItems(itemList);
          } catch (IOException e) {
-            showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while loading the data.csv file !");
+            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.loadCatalog"));
          } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while parsing the data !");
+            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.parse"));
          }
       } else {
-         showAlert(Alert.AlertType.INFORMATION, "Initialization Needed", "Please add items to initialize the application !");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.initNeeded"), Messages.get("main.initNeeded"));
       }
    }// end of loadItemsFromCSV method
 
@@ -212,19 +224,19 @@ public class MainViewController {
    private void handleDeleteItem() {
       // Check if the list is null or empty for initialization
       if (itemList == null || itemList.isEmpty()) {
-         showAlert(Alert.AlertType.INFORMATION, "Initialization Needed", "Please add items to initialize the application !");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.initNeeded"), Messages.get("main.initNeeded"));
          return;
       }//end of if block
 
       Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
       if (selectedItem != null) {
          Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-         alert.setTitle("Delete Item");
-         alert.setHeaderText("Are you sure you want to delete the item?");
-         alert.setContentText("Choose your option:");
+         alert.setTitle(Messages.get("main.delete.title"));
+         alert.setHeaderText(Messages.get("main.delete.header"));
+         alert.setContentText(Messages.get("dialog.chooseOption"));
 
-         ButtonType buttonTypeOne = new ButtonType("Yes");
-         ButtonType buttonTypeTwo = new ButtonType("No");
+         ButtonType buttonTypeOne = new ButtonType(Messages.get("dialog.yes"));
+         ButtonType buttonTypeTwo = new ButtonType(Messages.get("dialog.no"));
 
          alert.getButtonTypes().setAll(buttonTypeOne, buttonTypeTwo);
 
@@ -235,13 +247,13 @@ public class MainViewController {
                itemList.remove(selectedItem);
                archiveRecords(selectedItem.getTitle());
                deleteDirectory(selectedItem.getTitle());
-               showAlert(Alert.AlertType.CONFIRMATION, "Item Deleted", "Item deleted successfully !\n\n" + Messages.get("item.recordsArchived"));
+               showAlert(Alert.AlertType.CONFIRMATION, Messages.get("main.deleted.title"), Messages.get("main.deleted") + "\n\n" + Messages.get("item.recordsArchived"));
             } catch (IOException e) {
-               showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating the data.csv file !");
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.updateCatalog"));
             }// end of try-catch block
          }//end of if block
       } else {
-         showAlert(Alert.AlertType.INFORMATION, "No Selection", "No item selected for deletion.");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.noSelection"), Messages.get("main.noneSelectedDelete"));
       }//end of if-else block
    }//end of handleDeleteItem method
 
@@ -250,14 +262,14 @@ public class MainViewController {
    private void handleDraw() {
       // Check if the list is null or empty for initialization
       if (itemList == null || itemList.isEmpty()) {
-         showAlert(Alert.AlertType.INFORMATION, "Initialization Needed", "Please add items to initialize the application !");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.initNeeded"), Messages.get("main.initNeeded"));
          return;
       }
 
       // Get the selected item
       Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
       if (selectedItem == null) {
-         showAlert(Alert.AlertType.INFORMATION, "No Selection", "Please select an item to draw.");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.noSelection"), Messages.get("main.selectToDraw"));
          return;
       }
 
@@ -265,9 +277,17 @@ public class MainViewController {
       try {
          app.showDrawView(selectedItem);
       } catch (Exception e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while trying to open the Draw window.");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("main.err.openDraw"));
       }
    }//end of handleDraw method
+
+   // Switch between English and Romanian. Every screen is built from the bundle when it is opened,
+   // so rebuilding the main view is enough to apply the new language.
+   @FXML
+   private void handleToggleLanguage() {
+      Messages.switchLanguage();
+      app.showMainView();
+   }//end of handleToggleLanguage method
 
    @FXML
    private void handleRefreshList() {
@@ -317,7 +337,7 @@ public class MainViewController {
    private void handleViewItem(){
       // Check if the list is null or empty for initialization
       if (itemList == null || itemList.isEmpty()) {
-         showAlert(Alert.AlertType.INFORMATION, "Initialization Needed", "Please add items to initialize the application !");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.initNeeded"), Messages.get("main.initNeeded"));
          return;
       }//end of if block
 
@@ -325,7 +345,7 @@ public class MainViewController {
       if (selectedItem != null) {
          app.showViewItemView(selectedItem);
       } else {
-         showAlert(Alert.AlertType.INFORMATION, "No Selection", "No item selected.");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.noSelection"), Messages.get("main.noneSelected"));
       }
    }// end of handleViewItem method
 

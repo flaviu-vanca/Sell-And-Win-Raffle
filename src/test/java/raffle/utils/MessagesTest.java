@@ -44,4 +44,31 @@ class MessagesTest {
    void missingKeyIsReturnedInsteadOfCrashing() {
       assertEquals("no.such.key", Messages.get("no.such.key"));
    }
+
+   @Test
+   void unsupportedLanguageIsEnglishEvenWhenTheJvmDefaultIsRomanian() {
+      Locale original = Locale.getDefault();
+      try {
+         Locale.setDefault(Locale.forLanguageTag("ro"));
+         Messages.setLocale(Locale.FRENCH);
+         assertEquals("*** Winner ***", Messages.get("draw.winner"));
+         assertEquals(Locale.ENGLISH, Messages.locale());
+      } finally {
+         Locale.setDefault(original);
+      }
+   }
+
+   @Test
+   void otherIsTheLanguageTheButtonSwitchesTo() {
+      Messages.setLocale(Locale.ENGLISH);
+      assertEquals("ro", Messages.other().getLanguage());
+      Messages.setLocale(Locale.forLanguageTag("ro"));
+      assertEquals("en", Messages.other().getLanguage());
+   }
+
+   @Test
+   void bundleIsExposedForFxml() {
+      Messages.setLocale(Locale.forLanguageTag("ro"));
+      assertEquals("Extragere", Messages.bundle().getString("main.btn.draw"));
+   }
 }

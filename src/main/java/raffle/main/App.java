@@ -18,6 +18,7 @@ import raffle.controllers.*;
 import raffle.models.Item;
 import raffle.utils.AppPaths;
 import raffle.utils.BackupService;
+import raffle.utils.Fxml;
 import raffle.utils.Messages;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ public class App extends Application {
    public void start(Stage primaryStage) {
       this.primaryStage = primaryStage;
       this.primaryStage.setTitle("Sell & Win Raffle");
+      Messages.initFromSettings();
 
       // Keep a copy of the data from before this session. A failed backup must never stop the app from starting.
       try {
@@ -46,7 +48,7 @@ public class App extends Application {
    // Method to show the Loading View with error handling
    private void showLoadingView() {
       try {
-         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml_files/loading-view.fxml"));
+         FXMLLoader loader = Fxml.loader("/fxml_files/loading-view.fxml");
          Pane root = new Pane();
          root.setBackground(new Background(new BackgroundFill(Color.LIGHTBLUE, new CornerRadii(50), Insets.EMPTY)));
          root.getStyleClass().add("loading-view");
@@ -78,19 +80,19 @@ public class App extends Application {
             try {
                showMainView();
             } catch (Exception e) {
-               showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while loading the application !", true);
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadApp"), true);
             }
          });
          pause.play();
       } catch (Exception e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during the loading process !", true);
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showLoadingView method
 
    // Method to show the Main View
    public void showMainView() {
       try {
-         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml_files/main-view.fxml"));
+         FXMLLoader loader = Fxml.loader("/fxml_files/main-view.fxml");
          Scene scene = new Scene(loader.load());
          primaryStage.setScene(scene);
 
@@ -106,17 +108,17 @@ public class App extends Application {
 
          primaryStage.show();
       } catch (Exception e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during the loading process !", true);
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showMainView method
 
    // Method to show the Draw View
    public void showDrawView(Item selectedItem) {
       try {
-         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml_files/draw-view.fxml"));
+         FXMLLoader loader = Fxml.loader("/fxml_files/draw-view.fxml");
          Scene scene = new Scene(loader.load());
          primaryStage.setScene(scene);
-         primaryStage.setTitle("Draw");
+         primaryStage.setTitle(Messages.get("window.draw"));
 
          DrawController controller = loader.getController();
          controller.setItem(selectedItem);
@@ -127,7 +129,7 @@ public class App extends Application {
                showMainView();
                primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
-               showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while loading Draw View !", true);
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadDraw"), true);
             }
          });// end of setOnCloseRequest method
 
@@ -135,17 +137,17 @@ public class App extends Application {
          primaryStage.setMinHeight(800); // Set minimum height
          primaryStage.show();
       } catch (Exception e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during the loading process !", true);
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showDrawView method
 
    // Method to show the View Item View
    public void showViewItemView(Item selectedItem) {
       try {
-         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml_files/view-item-view.fxml"));
+         FXMLLoader loader = Fxml.loader("/fxml_files/view-item-view.fxml");
          Scene scene = new Scene(loader.load());
          primaryStage.setScene(scene);
-         primaryStage.setTitle("View Item");
+         primaryStage.setTitle(Messages.get("window.viewItem"));
 
          ViewItemController controller = loader.getController();
          controller.setItem(selectedItem);
@@ -156,7 +158,7 @@ public class App extends Application {
                showMainView();
                primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
-               showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while loading Item View !", true);
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadItem"), true);
             }
          });// end of setOnCloseRequest method
 
@@ -164,17 +166,17 @@ public class App extends Application {
          primaryStage.setMinHeight(800); // Set minimum height
          primaryStage.show();
       } catch (Exception e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during the loading process !", true);
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showViewItemView method
 
    // Method to show the Add Item View
    public void showAddItemView() {
       try {
-         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml_files/add-item-view.fxml"));
+         FXMLLoader loader = Fxml.loader("/fxml_files/add-item-view.fxml");
          Scene scene = new Scene(loader.load());
          primaryStage.setScene(scene);
-         primaryStage.setTitle("Add Item");
+         primaryStage.setTitle(Messages.get("window.addItem"));
 
          primaryStage.setMinWidth(900); // set minimum width
          primaryStage.setMinHeight(800); // set minimum height
@@ -185,13 +187,13 @@ public class App extends Application {
                showMainView();
                primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
-               showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while loading Add Item View !", true);
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadAddItem"), true);
             }
          });// end of setOnCloseRequest method
 
          primaryStage.show();// show the stage
       } catch (Exception e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during the loading process !", true);
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showAddItemView method
 
@@ -202,14 +204,14 @@ public class App extends Application {
 
          // Check if the data.csv file is accessible
          if (new AddPlayerController().isFileAccessibleForWriting(dataFilePath)) {
-            showAlert(Alert.AlertType.ERROR, "File Access Error", "The data.csv file is open in another application. Please close it and try again.", false);
+            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.fileAccess"), Messages.get("err.fileOpen", "data.csv"), false);
             return; // Return early, do not open the Add Player window
          }
 
-         FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml_files/add-player-view.fxml"));
+         FXMLLoader loader = Fxml.loader("/fxml_files/add-player-view.fxml");
          Scene scene = new Scene(loader.load());
          primaryStage.setScene(scene);
-         primaryStage.setTitle("Add Player");
+         primaryStage.setTitle(Messages.get("window.addPlayer"));
 
          AddPlayerController controller = loader.getController();
          controller.setItem(selectedItem); // Set the selected item in the controller
@@ -221,7 +223,7 @@ public class App extends Application {
                showMainView();
                primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
-               showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while loading Add Player View !", true);
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadAddPlayer"), true);
             }
          });
 
@@ -230,7 +232,7 @@ public class App extends Application {
          primaryStage.show();
 
       } catch (Exception e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An unexpected error occurred during the loading process !", true);
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showAddPlayerView method
 

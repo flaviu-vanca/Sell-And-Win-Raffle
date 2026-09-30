@@ -33,7 +33,7 @@ Data is stored locally using **CSV files** and item-specific image folders under
 - 🎲 Run a live draw: the winner is picked with a secure random generator, only among tickets that were actually sold
 - 📜 Every draw is saved to a history file (time, item, ticket, winner)
 - 🛟 Crash-safe saves (write to a temp file, then replace) and an automatic backup on every start-up
-- 🌍 English and Romanian (follows the system language; texts live in `i18n/messages*.properties`)
+- 🌍 English and Romanian: every screen is translated, the language follows the system language at first and can be switched with the `RO`/`EN` button on the main screen (the choice is remembered in `settings.properties`). Texts live in `i18n/messages*.properties`
 - 🧰 Package as a **JAR** and a Windows **.exe** (Launch4j)
 
 ---
@@ -112,6 +112,7 @@ At runtime, the application writes data to the user’s home directory:
     <item-title>.csv.bak      (previous version, kept on every save)
   <item-title>/
     image files...
+  settings.properties         (chosen language)
   backups/
     <yyyyMMdd-HHmmss>/        (snapshot of data/ and records/ taken at each start-up, newest 20 kept)
     deleted/                  (ledgers of deleted items are moved here, never destroyed)
@@ -205,7 +206,7 @@ The UI is split into focused JavaFX controllers:
 - `BackupService` — start-up snapshots and archiving of deleted items
 - `AppPaths` — the one place that knows where data lives
 - `PhoneNumbers` — phone validation and normalisation (kept as text, 7–15 digits, optional `+`)
-- `Messages` — localized text from the resource bundles
+- `Messages`, `AppSettings`, `Fxml` — localized text from the resource bundles, the saved language, and FXML loading with the active bundle
 
 ---
 
@@ -261,10 +262,11 @@ The repository contains automated tests for:
 - Draw history
 - CSV reading and writing, including files from older versions
 - Atomic saves and backups
-- Phone validation and localized messages
+- Phone validation, settings and localized messages
+- Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 11 test classes, 43 JUnit tests (`mvn test`). The controllers are not unit tested yet.
+Current test suite: 13 test classes, 54 JUnit tests (`mvn test`). The controllers are not unit tested yet.
 
 ---
 
@@ -302,7 +304,6 @@ The JavaFX UI currently includes these views:
 - CSV-based persistence (not database-backed)
 - Designed for local use (not multi-user)
 - Images managed through the local file system
-- Texts on most screens are still English only; the new draw, validation and backup texts are already localized
 
 ---
 

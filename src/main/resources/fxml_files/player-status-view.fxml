@@ -14,7 +14,7 @@
         <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
     </padding>
     <TextField fx:id="playerInput" alignment="CENTER" maxWidth="-Infinity" prefHeight="100.0" prefWidth="800.0"
-               promptText="Enter Name or Phone Number" styleClass="player-status"
+               promptText="%status.prompt.input" styleClass="player-status"
                stylesheets="@../stylesheets/styles.css" VBox.vgrow="ALWAYS">
         <padding>
          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
@@ -24,7 +24,7 @@
         </VBox.margin>
     </TextField>
     <TextArea id="text-area" fx:id="displayPlayerStatus" maxHeight="500.0" maxWidth="800.0" prefHeight="350.0"
-              prefWidth="800.0" promptText="Player Status" VBox.vgrow="ALWAYS">
+              prefWidth="800.0" promptText="%status.prompt.output" VBox.vgrow="ALWAYS">
         <VBox.margin>
           <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
         </VBox.margin>
@@ -33,6 +33,6 @@
         </padding>
     </TextArea>
     <Button fx:id="checkPlayerStatus" onAction="#handleCheckPlayer" prefHeight="50.0" prefWidth="346.0"
-            styleClass="player-status" stylesheets="@../stylesheets/styles.css" text="Check Player"
+            styleClass="player-status" stylesheets="@../stylesheets/styles.css" text="%status.btn.check"
             VBox.vgrow="ALWAYS"/>
 </VBox>

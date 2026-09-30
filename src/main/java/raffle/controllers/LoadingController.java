@@ -7,6 +7,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.shape.Rectangle;
 
+import raffle.utils.Messages;
+
 import java.util.Objects;
 
 public class LoadingController {
@@ -29,8 +31,8 @@ public class LoadingController {
           * without the logo.
           */
          Alert.AlertType type = Alert.AlertType.ERROR;
-         String title = "ERROR";
-         String header = "Critical Error: Application failed to initialize properly.\nPlease contact the developer !";
+         String title = Messages.get("alert.title.criticalError");
+         String header = Messages.get("app.err.critical");
          Alert alert = new Alert(type);
          alert.setTitle(title);
          alert.setHeaderText(header);

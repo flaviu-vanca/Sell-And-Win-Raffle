@@ -11,6 +11,7 @@ import raffle.models.Player;
 import raffle.utils.AppPaths;
 import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.PlayerDataReaderAndWriter;
+import raffle.utils.Messages;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,13 +49,13 @@ public class AddItemController {
    @FXML
    public void initialize() {
       // Add tooltips to the controls
-      addTooltip(titleTextField, "Enter the Title of the Item");
-      addTooltip(descriptionTextField, "Enter the Description of the Item");
-      addTooltip(numberOfTicketsTextField, "Enter the Number of Tickets Available for the Item");
-      addTooltip(ticketPriceTextField, "Enter the Price of Each Ticket for the Item");
-      addTooltip(addDDefaultImageButton, "Add a Default Image for the Item.\nWhich will be Displayed in the Main View");
-      addTooltip(addItemButton, "Add the Item to the Raffle List");
-      addTooltip(clearFieldsButton, "Clear all fields");
+      addTooltip(titleTextField, Messages.get("additem.tip.title"));
+      addTooltip(descriptionTextField, Messages.get("additem.tip.description"));
+      addTooltip(numberOfTicketsTextField, Messages.get("additem.tip.tickets"));
+      addTooltip(ticketPriceTextField, Messages.get("additem.tip.price"));
+      addTooltip(addDDefaultImageButton, Messages.get("additem.tip.image"));
+      addTooltip(addItemButton, Messages.get("additem.tip.add"));
+      addTooltip(clearFieldsButton, Messages.get("additem.tip.clear"));
 
    }// end of initialize method
 
@@ -66,9 +67,9 @@ public class AddItemController {
 
       // Create a file chooser dialog
       FileChooser fileChooser = new FileChooser();
-      fileChooser.setTitle("Select Image");
+      fileChooser.setTitle(Messages.get("additem.chooser.title"));
       fileChooser.getExtensionFilters().addAll(
-              new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.tiff", "*.webp")
+              new FileChooser.ExtensionFilter(Messages.get("additem.chooser.filter"), "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.tiff", "*.webp")
       );
 
       // Set initial directory to the app's directory
@@ -88,7 +89,7 @@ public class AddItemController {
 
          // Check if the selected directory matches the title
          if (! selectedFile.getParentFile().getName().equals(title)) {
-            showAlert(Alert.AlertType.ERROR, "Error", "The selected image is not in the correct directory !");
+            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("additem.err.wrongDir"));
             return;
          }// end of if statement
 
@@ -110,12 +111,12 @@ public class AddItemController {
                                            .orElse(false);
             if (updated) {
                ItemDataReaderAndWriter.writeItemsToCSV(existingItems, dataFilePath);
-               showAlert(Alert.AlertType.CONFIRMATION, "Image Updated", "The default image has been updated successfully !");
+               showAlert(Alert.AlertType.CONFIRMATION, Messages.get("additem.imageUpdated.title"), Messages.get("additem.imageUpdated"));
             } else {
-               showAlert(Alert.AlertType.ERROR, "Error", "The image path could not be updated !");
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("additem.err.imagePath"));
             }// end of if-else block
          } catch (IOException e) {
-            showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating the data.csv file !");
+            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.updateCatalog"));
          }// end of try-catch block
       }// end of if statement
    }// end of handleAddImage method
@@ -131,22 +132,22 @@ public class AddItemController {
 
       // Validate inputs
       if (title.isEmpty()) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Title field cannot be empty !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.titleEmpty"));
          return;
       }
 
       if (description.isEmpty()) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Description field cannot be empty !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.descriptionEmpty"));
          return;
       }
 
       if (numberOfTicketsText.isEmpty()) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Number of tickets field cannot be empty !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsEmpty"));
          return;
       }
 
       if (ticketPriceText.isEmpty()) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Ticket price field cannot be empty !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.priceEmpty"));
          return;
       }
 
@@ -155,11 +156,11 @@ public class AddItemController {
       try {
          numberOfTickets = Integer.parseInt(numberOfTicketsText);
          if (numberOfTickets <= 0) {
-            showAlert(Alert.AlertType.WARNING, "Input Error", "Number of tickets must be a positive integer !");
+            showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsPositiveInt"));
             return;
          }
       } catch (NumberFormatException e) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Enter a valid number for the number of tickets !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsInvalid"));
          return;
       }// end of try-catch block
 
@@ -168,11 +169,11 @@ public class AddItemController {
       try {
          ticketPrice = Double.parseDouble(ticketPriceText);
          if (ticketPrice <= 0) {
-            showAlert(Alert.AlertType.WARNING, "Input Error", "Ticket price must be a positive number !");
+            showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.pricePositive"));
             return;
          }
       } catch (NumberFormatException e) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Enter a valid number for the ticket price !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.priceInvalid"));
          return;
       }// end of try-catch block
 
@@ -182,15 +183,13 @@ public class AddItemController {
       // Check if directory already exists
       Path path = AppPaths.itemDir(title);
       if (Files.exists(path)) {
-         showAlert(Alert.AlertType.WARNING, "Directory already exists !", "A directory for " + title + " already exists !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("additem.dirExists.title"), Messages.get("additem.dirExists", title));
          return;
       }
 
       // Check if CSV file already exists
       if (Files.exists(csvFilePath)) {
-         showAlert(Alert.AlertType.WARNING, "CSV file already exists !", "A record for " + title + " already exists !\n\n" +
-                 "Please delete the existing record before adding a new one.\n\n" +
-                 "Check path:\n\n" + recordsPath);
+         showAlert(Alert.AlertType.WARNING, Messages.get("additem.recordExists.title"), Messages.get("additem.recordExists", title, recordsPath));
          return;
       }
 
@@ -219,14 +218,12 @@ public class AddItemController {
          } catch (IOException ignored) {
             // nothing more can be done here
          }// end of try-catch block
-         showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while creating the directory or file !");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("additem.err.create"));
          return;
       }// end of try-catch block
 
       // Show a confirmation message
-      showAlert(Alert.AlertType.CONFIRMATION, "Item Added", title + " has been added successfully !\n"
-              + "Please manually add images to the following path:\n\n" + path
-              + "\n\nbefore selecting the default image view !");
+      showAlert(Alert.AlertType.CONFIRMATION, Messages.get("additem.added.title"), Messages.get("additem.added", title, path));
 
    }// end of handleAddItem method
 

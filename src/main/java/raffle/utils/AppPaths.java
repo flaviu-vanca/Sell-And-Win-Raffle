@@ -44,6 +44,10 @@ public final class AppPaths {
       return root().resolve(itemTitle);
    }// end of itemDir method
 
+   public static Path settingsFile() {
+      return root().resolve("settings.properties");
+   }// end of settingsFile method
+
    public static Path backupsDir() {
       return root().resolve("backups");
    }// end of backupsDir method

@@ -6,6 +6,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import raffle.models.Item;
 import raffle.utils.AppPaths;
+import raffle.utils.Messages;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,10 +39,10 @@ public class ViewItemController {
       prevButton.setOnAction(event -> handlePreviousImage());
       nextButton.setOnAction(event -> handleNextImage());
 
-      addTooltip(prevButton, "Previous Image");
-      addTooltip(nextButton, "Next Image");
-      addTooltip(itemTitleLabel, "Title of the Item");
-      addTooltip(itemDescriptionLabel, "Description of the Item");
+      addTooltip(prevButton, Messages.get("viewitem.tip.prev"));
+      addTooltip(nextButton, Messages.get("viewitem.tip.next"));
+      addTooltip(itemTitleLabel, Messages.get("viewitem.tip.title"));
+      addTooltip(itemDescriptionLabel, Messages.get("viewitem.tip.description"));
    }// end of initialize method
 
    // Method to set the item
@@ -81,7 +82,7 @@ public class ViewItemController {
          Image image = new Image(fis);
          itemImage.setImage(image);
       } catch (IOException e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while loading the image !");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("viewitem.err.image"));
       }// end of try-catch block
    }// end of showImage method
 

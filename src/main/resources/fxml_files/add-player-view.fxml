@@ -6,6 +6,7 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
@@ -22,10 +23,10 @@
         </VBox.margin>
         <TableView fx:id="playerTable" HBox.hgrow="ALWAYS">
             <columns>
-                <TableColumn fx:id="IDColumn" prefWidth="50.0" text="ID" />
-                <TableColumn fx:id="nameColumn" prefWidth="400.0" text="Name" />
-                <TableColumn fx:id="phoneNumberColumn" minWidth="0.0" prefWidth="380.0" text="Phone Number" />
-                <TableColumn fx:id="numberOfTicketsColumn" minWidth="0.0" prefWidth="168.0" text="Number of Tickets" />
+                <TableColumn fx:id="IDColumn" prefWidth="50.0" text="%player.col.id" />
+                <TableColumn fx:id="nameColumn" prefWidth="400.0" text="%player.col.name" />
+                <TableColumn fx:id="phoneNumberColumn" minWidth="0.0" prefWidth="380.0" text="%player.col.phone" />
+                <TableColumn fx:id="numberOfTicketsColumn" minWidth="0.0" prefWidth="168.0" text="%player.col.tickets" />
             </columns>
             <HBox.margin>
                 <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
@@ -36,19 +37,19 @@
         </TableView>
     </HBox>
     <HBox alignment="CENTER" maxHeight="75.0" prefHeight="75.0" spacing="10.0" styleClass="h-box" VBox.vgrow="ALWAYS">
-        <Label id="ID" fx:id="ticketsLeft" alignment="CENTER" minWidth="150.0" text="Tickets left" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
-        <TextField fx:id="playerName" promptText="Name" HBox.hgrow="ALWAYS">
+        <Label id="ID" fx:id="ticketsLeft" alignment="CENTER" minWidth="150.0" text="%player.label.left" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
+        <TextField fx:id="playerName" promptText="%player.col.name" HBox.hgrow="ALWAYS">
             <HBox.margin>
                 <Insets />
             </HBox.margin>
         </TextField>
-        <TextField fx:id="phoneNumber" promptText="Phone Number" HBox.hgrow="ALWAYS" />
-        <TextField fx:id="numberOfTickets" promptText="Number of Tickets" HBox.hgrow="ALWAYS" />
+        <TextField fx:id="phoneNumber" promptText="%player.col.phone" HBox.hgrow="ALWAYS" />
+        <TextField fx:id="numberOfTickets" promptText="%player.col.tickets" HBox.hgrow="ALWAYS" />
     </HBox>
-    <HBox alignment="CENTER" maxHeight="75.0" prefHeight="75.0" spacing="123.0" styleClass="h-box" VBox.vgrow="ALWAYS">
-        <Button fx:id="addPlayerButton" onAction="#handleAddPlayer" text="Add Player" HBox.hgrow="ALWAYS" />
-        <Button fx:id="removePlayerButton" onAction="#handleRemovePlayer" text="Remove Record" HBox.hgrow="ALWAYS" />
-        <Button fx:id="clearFieldsButton" onAction="#clearFields" text="Clear Fields" HBox.hgrow="ALWAYS" />
-        <Button fx:id="refreshButton" onAction="#handleRefresh" text="Refresh " textAlignment="CENTER" HBox.hgrow="ALWAYS" />
-    </HBox>
+    <FlowPane alignment="CENTER" hgap="40.0" vgap="8.0" styleClass="h-box" VBox.vgrow="NEVER">
+        <Button fx:id="addPlayerButton" onAction="#handleAddPlayer" text="%player.btn.add" />
+        <Button fx:id="removePlayerButton" onAction="#handleRemovePlayer" text="%player.btn.remove" />
+        <Button fx:id="clearFieldsButton" onAction="#clearFields" text="%player.btn.clear" />
+        <Button fx:id="refreshButton" onAction="#handleRefresh" text="%player.btn.refresh" textAlignment="CENTER" />
+    </FlowPane>
 </VBox>

@@ -61,14 +61,14 @@ public class AddPlayerController {
    @FXML
    private void initialize() {
       // Add tooltips to the controls
-      addTooltip(playerName, "Enter Player's Name");
-      addTooltip(phoneNumber, "Enter Player's Phone Number");
-      addTooltip(numberOfTickets, "Enter the Number of Tickets a Player Wants to Buy");
-      addTooltip(ticketsLeft, "Number of Tickets Left");
-      addTooltip(addPlayerButton, "Add Player to the List");
-      addTooltip(clearFieldsButton, "Clear all Fields");
-      addTooltip(refreshButton, "Refresh the List");
-      addTooltip(removePlayerButton, "Delete the Record of the Selected Player");
+      addTooltip(playerName, Messages.get("player.tip.name"));
+      addTooltip(phoneNumber, Messages.get("player.tip.phone"));
+      addTooltip(numberOfTickets, Messages.get("player.tip.tickets"));
+      addTooltip(ticketsLeft, Messages.get("player.tip.left"));
+      addTooltip(addPlayerButton, Messages.get("player.tip.add"));
+      addTooltip(clearFieldsButton, Messages.get("player.tip.clear"));
+      addTooltip(refreshButton, Messages.get("player.tip.refresh"));
+      addTooltip(removePlayerButton, Messages.get("player.tip.deleteOne"));
 
       // Initialize the player table
       IDColumn.setCellValueFactory(cellData -> cellData.getValue().idProperty().asObject());
@@ -79,11 +79,11 @@ public class AddPlayerController {
       // Add a listener to the selection model of the playerTable
       playerTable.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Change<? extends Player> change) -> {
          if (playerTable.getSelectionModel().getSelectedItems().size() > 1) {
-            removePlayerButton.setText("Delete Records");
-            addTooltip(removePlayerButton, "Delete the Records of the Selected Player/s");
+            removePlayerButton.setText(Messages.get("player.btn.deleteMany"));
+            addTooltip(removePlayerButton, Messages.get("player.tip.deleteMany"));
          } else {
-            removePlayerButton.setText("Delete Record");
-            addTooltip(removePlayerButton, "Delete the Record of the Selected Player");
+            removePlayerButton.setText(Messages.get("player.btn.deleteOne"));
+            addTooltip(removePlayerButton, Messages.get("player.tip.deleteOne"));
          }// end of if-else block
       });
 
@@ -179,12 +179,12 @@ public class AddPlayerController {
             playerList.setAll(players);
             calculateAvailableIDs(players);
          } catch (IOException e) {
-            showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while loading the " + itemTitle + ".csv file!");
+            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.loadRecords", itemTitle));
          } catch (NumberFormatException e) {
-            showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while parsing the data !");
+            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.parse"));
          }// end of try-catch block
       } else {
-         showAlert(Alert.AlertType.WARNING, "Initialization Needed", "Please add players to initialize the application !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.initNeeded"), Messages.get("player.initNeeded"));
       }// end of if-else block
    }// end of loadPlayersFromCSV method
 
@@ -226,7 +226,7 @@ public class AddPlayerController {
       Path dataFilePath = AppPaths.catalogFile();
 
       if (isFileAccessibleForWriting(dataFilePath)) {
-         showAlert(Alert.AlertType.ERROR, "File Access Error", "The data.csv file is open in another application. Please close it and try again.");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.fileAccess"), Messages.get("err.fileOpen", "data.csv"));
          return;
       }// end of if block
 
@@ -238,7 +238,7 @@ public class AddPlayerController {
             ItemDataReaderAndWriter.writeItemsToCSV(items, dataFilePath);
          }// end of if block
       } catch (IOException e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating the tickets in data.csv !");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("player.err.updateTickets"));
       }// end of try-catch block
    }// end of updateTicketsInCSV method
 
@@ -249,29 +249,29 @@ public class AddPlayerController {
 
       // Check if the records.csv file is accessible
       if (isFileAccessibleForWriting(recordsFilePath)) {
-         showAlert(Alert.AlertType.ERROR, "File Access Error", "The " + itemTitle + ".csv file is open in another application. Please close it and try again.");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.fileAccess"), Messages.get("err.fileOpen", itemTitle + ".csv"));
          return; // Return early, do not proceed with adding the player
       }
 
       // Make sure fields are not empty
       if (playerName.getText().isEmpty()) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Name field cannot be empty !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.nameEmpty"));
          return;
       }
 
       if (phoneNumber.getText().isEmpty()) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Phone Number field cannot be empty !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.phoneEmpty"));
          return;
       }
 
       if (numberOfTickets.getText().isEmpty()) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Number of tickets field cannot be empty !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsEmpty"));
          return;
       }
 
       // Validate the phone number input field
       if (! PhoneNumbers.isValid(phoneNumber.getText())) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", Messages.get("phone.invalid"));
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("phone.invalid"));
          return;
       }// end of if block
 
@@ -279,11 +279,11 @@ public class AddPlayerController {
       try {
          int numberOfTicketsValue = Integer.parseInt(numberOfTickets.getText());
          if (numberOfTicketsValue <= 0) {
-            showAlert(Alert.AlertType.WARNING, "Input Error", "Number of tickets must be a positive number!");
+            showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsPositive"));
             return;
          }
       } catch (NumberFormatException e) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Enter valid digits in Number of Tickets field!");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsDigits"));
          return;
       }// end of try-catch block
 
@@ -295,17 +295,17 @@ public class AddPlayerController {
       try {
          tickets = Integer.parseInt(numberOfTickets.getText().trim());
          if (tickets <= 0) {
-            showAlert(Alert.AlertType.WARNING, "Input Error", "Number of tickets must be a positive number !");
+            showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsPositive"));
             return;
          }// end of if block
       } catch (NumberFormatException e) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Enter a valid number for the number of tickets !");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get("val.ticketsInvalid"));
          return;
       }// end of try-catch block
 
       // Check if there are enough tickets available
       if (availableIDs.size() < tickets) {
-         showAlert(Alert.AlertType.ERROR, "Input Error", "Not enough tickets available !");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.inputError"), Messages.get("player.notEnough"));
          return;
       }// end of if block
 
@@ -356,7 +356,7 @@ public class AddPlayerController {
       } catch (IOException e) {
          // Nothing was saved: put the tickets back and reload what is really on disk
          availableIDs = availableBeforeSale;
-         showAlert(Alert.AlertType.ERROR, "Error", "The sale could not be saved. No tickets were sold.\n\n" + e.getMessage());
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("player.saveFailed", e.getMessage()));
          handleRefresh();
          return;
       }// end of try-catch block
@@ -367,7 +367,7 @@ public class AddPlayerController {
                             .collect(Collectors.joining(", "));
 
       // Show a confirmation message
-      showAlert(Alert.AlertType.CONFIRMATION, "Player Added", name + " has been added with ticket IDs:\n\n" + IDs + "\n");
+      showAlert(Alert.AlertType.CONFIRMATION, Messages.get("player.added.title"), Messages.get("player.addedBody", name, IDs));
 
       updateTicketsLeftLabel();
       clearFields();
@@ -382,7 +382,7 @@ public class AddPlayerController {
 
       // Check if the records.csv file is accessible
       if (isFileAccessibleForWriting(recordsFilePath)) {
-         showAlert(Alert.AlertType.ERROR, "File Access Error", "The " + itemTitle + ".csv file is open in another application. Please close it and try again.");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.fileAccess"), Messages.get("err.fileOpen", itemTitle + ".csv"));
          return; // Return early, do not proceed with removing the player
       }
 
@@ -392,12 +392,12 @@ public class AddPlayerController {
 
          // Show a confirmation dialog
          Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-         alert.setTitle("Delete Players");
-         alert.setHeaderText("Are you sure you want to delete the selected players?");
-         alert.setContentText("Choose your option:");
+         alert.setTitle(Messages.get("player.delete.title"));
+         alert.setHeaderText(Messages.get("player.delete.header"));
+         alert.setContentText(Messages.get("dialog.chooseOption"));
 
-         ButtonType buttonTypeOne = new ButtonType("Yes");
-         ButtonType buttonTypeTwo = new ButtonType("No");
+         ButtonType buttonTypeOne = new ButtonType(Messages.get("dialog.yes"));
+         ButtonType buttonTypeTwo = new ButtonType(Messages.get("dialog.no"));
 
          alert.getButtonTypes().setAll(buttonTypeOne, buttonTypeTwo);
 
@@ -435,16 +435,16 @@ public class AddPlayerController {
             try {
                PlayerDataReaderAndWriter.writePlayersToCSV(new ArrayList<>(playerList), AppPaths.recordsFile(itemTitle));
             } catch (IOException e) {
-               showAlert(Alert.AlertType.ERROR, "Error", "The change could not be saved. The records were left as they were.\n\n" + e.getMessage());
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("player.removeFailed", e.getMessage()));
                handleRefresh();
                return;
             }// end of try-catch block
 
-            showAlert(Alert.AlertType.CONFIRMATION, "Players Removed", "Selected players have been removed successfully!");
+            showAlert(Alert.AlertType.CONFIRMATION, Messages.get("player.removed.title"), Messages.get("player.removed"));
             handleRefresh();
          }// end of if block
       } else {
-         showAlert(Alert.AlertType.INFORMATION, "No Selection", "No players selected for removal!");
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.noSelection"), Messages.get("player.noneSelected"));
       }// end of if-else block
    }// end of handleRemovePlayer method
 

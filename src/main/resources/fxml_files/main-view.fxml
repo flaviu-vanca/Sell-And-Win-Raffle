@@ -5,7 +5,7 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.cell.PropertyValueFactory?>
-<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox alignment="CENTER" prefWidth="1040.0" style="-fx-border-color: #9c7945; -fx-border-width: 2;" styleClass="main-view" stylesheets="@../stylesheets/styles.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="raffle.controllers.MainViewController">
@@ -18,22 +18,22 @@
         </VBox.margin>
         <TableView fx:id="itemTable" prefHeight="500.0" prefWidth="1000.0" stylesheets="@../stylesheets/styles.css" VBox.vgrow="ALWAYS">
             <columns>
-                <TableColumn id="image" fx:id="imageColumn" minWidth="300.0" prefWidth="378.0" text="Image">
+                <TableColumn id="image" fx:id="imageColumn" minWidth="300.0" prefWidth="378.0" text="%main.col.image">
                     <cellValueFactory>
                         <PropertyValueFactory property="image" />
                     </cellValueFactory>
                 </TableColumn>
-                <TableColumn id="title" fx:id="titleColumn" minWidth="299.199951171875" prefWidth="371.0" text="Title">
+                <TableColumn id="title" fx:id="titleColumn" minWidth="299.199951171875" prefWidth="371.0" text="%main.col.title">
                     <cellValueFactory>
                         <PropertyValueFactory property="title" />
                     </cellValueFactory>
                 </TableColumn>
-                <TableColumn id="availableTickets" fx:id="ticketsColumn" minWidth="100.0" prefWidth="158.0" text="Available Tickets">
+                <TableColumn id="availableTickets" fx:id="ticketsColumn" minWidth="100.0" prefWidth="158.0" text="%main.col.left">
                     <cellValueFactory>
                         <PropertyValueFactory property="tickets" />
                     </cellValueFactory>
                 </TableColumn>
-                <TableColumn id="ticketPrice" fx:id="priceColumn" minWidth="82.0" prefWidth="116.79997558593755" text="Ticket Price">
+                <TableColumn id="ticketPrice" fx:id="priceColumn" minWidth="82.0" prefWidth="116.79997558593755" text="%main.col.price">
                     <cellValueFactory>
                         <PropertyValueFactory property="price" />
                     </cellValueFactory>
@@ -47,18 +47,19 @@
             </VBox.margin>
         </TableView>
     </VBox>
-  <HBox alignment="CENTER" maxHeight="75.0" spacing="40.0" styleClass="h-box" VBox.vgrow="NEVER">
-    <Button fx:id="addItemButton" onAction="#handleAddItem" styleClass="button" text="Add Item" HBox.hgrow="ALWAYS" />
-    <Button fx:id="deleteItemButton" onAction="#handleDeleteItem" styleClass="button" text="Delete Item" HBox.hgrow="ALWAYS" />
-      <Button fx:id="viewItemButton" onAction="#handleViewItem" styleClass="button" text="View Item" HBox.hgrow="ALWAYS" />
-      <Button fx:id="buyTicketsButton" onAction="#handleBuyTickets" styleClass="button" text="Buy tickets" HBox.hgrow="ALWAYS" />
-    <Button fx:id="drawButton" onAction="#handleDraw" styleClass="button" text="Draw" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
-    <Button fx:id="refreshListButton" onAction="#handleRefreshList" styleClass="button" text="Refresh List" textAlignment="CENTER" HBox.hgrow="ALWAYS" />
-      <VBox.margin>
-         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-      </VBox.margin>
-      <padding>
-         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-      </padding>
-  </HBox>
+  <FlowPane alignment="CENTER" hgap="14.0" vgap="8.0" styleClass="h-box" VBox.vgrow="NEVER">
+    <Button fx:id="addItemButton" onAction="#handleAddItem" styleClass="button" text="%main.btn.add" />
+    <Button fx:id="deleteItemButton" onAction="#handleDeleteItem" styleClass="button" text="%main.btn.delete" />
+    <Button fx:id="viewItemButton" onAction="#handleViewItem" styleClass="button" text="%main.btn.view" />
+    <Button fx:id="buyTicketsButton" onAction="#handleBuyTickets" styleClass="button" text="%main.btn.buy" />
+    <Button fx:id="drawButton" onAction="#handleDraw" styleClass="button" text="%main.btn.draw" />
+    <Button fx:id="refreshListButton" onAction="#handleRefreshList" styleClass="button" text="%main.btn.refresh" />
+    <Button fx:id="languageButton" onAction="#handleToggleLanguage" styleClass="button" />
+    <VBox.margin>
+       <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+    </VBox.margin>
+    <padding>
+       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+    </padding>
+  </FlowPane>
 </VBox>

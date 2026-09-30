@@ -29,9 +29,9 @@ public class PlayerStatusController {
    @FXML
    private void initialize() {
       // tooltip for the checkPlayerStatus button
-      addTooltip(checkPlayerStatus, "Check the Player's Status");
-      addTooltip(playerInput, "Enter Player's Name, Phone Number, or ID!");
-      addTooltip(displayPlayerStatus, "Player's Status Will be Displayed Here!");
+      addTooltip(checkPlayerStatus, Messages.get("status.tip.check"));
+      addTooltip(playerInput, Messages.get("status.tip.input"));
+      addTooltip(displayPlayerStatus, Messages.get("status.tip.output"));
    }//end of initialize method
 
    @FXML
@@ -41,7 +41,7 @@ public class PlayerStatusController {
 
       // Check if the input is empty
       if (input.isEmpty()) {
-         showAlert(Alert.AlertType.WARNING, "Warning", "Enter a name, phone number, or ID to search!");
+         showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.warning"), Messages.get("status.enterQuery"));
          return;
       }// end of if statement
 
@@ -53,7 +53,7 @@ public class PlayerStatusController {
 
          // Check if the player is found
          if (matchingPlayers.isEmpty()) {
-            displayPlayerStatus.setText("\n\n\tPlayer with the given name, phone number, or ID cannot be found!");
+            displayPlayerStatus.setText("\n\n\t" + Messages.get("status.notFoundAny"));
             return;
          }// end of if statement
 
@@ -71,15 +71,15 @@ public class PlayerStatusController {
                                                    .orElse(null);
 
             if (matchingPlayer == null) {
-               displayPlayerStatus.setText("\n\nPlayer with the given ID cannot be found !");
+               displayPlayerStatus.setText("\n\n" + Messages.get("status.notFoundId"));
             } else if (! matchingPlayer.isSold()) {
                displayPlayerStatus.setText("\n\n" + Messages.get("status.ticketNotSold", String.valueOf(inputId)));
             } else {
-               displayPlayerStatus.setText("Player found:\n"
-                                                   + "Name: " + matchingPlayer.getName() + "\n"
-                                                   + "Phone Number: " + matchingPlayer.getPhoneNumber() + "\n"
-                                                   + "Tickets Purchased: " + matchingPlayer.getNumberOfTickets() + "\n"
-                                                   + "ID: " + matchingPlayer.getId());
+               displayPlayerStatus.setText(Messages.get("status.found",
+                                                        matchingPlayer.getName(),
+                                                        matchingPlayer.getPhoneNumber(),
+                                                        String.valueOf(matchingPlayer.getNumberOfTickets()),
+                                                        String.valueOf(matchingPlayer.getId())));
             }// end of if/else block
          } else {
             Map<String, List<Player>> playersByPhoneNumber = matchingPlayers.stream()
@@ -91,7 +91,7 @@ public class PlayerStatusController {
                // Display players with the given phone number
                List<Player> playersWithPhone = playersByPhoneNumber.get(phoneInput);
                StringBuilder resultText = new StringBuilder();
-               resultText.append("Players with phone number ").append(phoneInput).append(":\n");
+               resultText.append(Messages.get("status.phoneHeader", phoneInput));
 
                // Group players by name
                Map<String, List<Player>> playersByName = playersWithPhone.stream()
@@ -103,9 +103,7 @@ public class PlayerStatusController {
                   int totalTickets = players.size();
                   List<Integer> ids = players.stream().map(Player::getId).collect(Collectors.toList());
 
-                  resultText.append("\nName: ").append(name)
-                            .append("\nTickets Purchased: ").append(totalTickets)
-                            .append("\nIDs: ").append(ids).append("\n");
+                  resultText.append("\n").append(Messages.get("status.block", name, String.valueOf(totalTickets), ids.toString()));
                }// end of for loop
                // Display the result
                displayPlayerStatus.setText(resultText.toString());
@@ -127,23 +125,20 @@ public class PlayerStatusController {
                      int totalTickets = players.size();
                      List<Integer> ids = players.stream().map(Player::getId).collect(Collectors.toList());
 
-                     resultText.append("Name: ").append(name)
-                               .append("\nPhone Number: ").append(phone)
-                               .append("\nTickets Purchased: ").append(totalTickets)
-                               .append("\nIDs: ").append(ids).append("\n\n");
+                     resultText.append(Messages.get("status.blockPhone", name, phone, String.valueOf(totalTickets), ids.toString())).append("\n");
                   }// end of inner for loop
                }// end of for loop
 
                // Display the result
                if (resultText.isEmpty()) {
-                  displayPlayerStatus.setText("\n\n\tPlayer with the given name or phone number cannot be found!");
+                  displayPlayerStatus.setText("\n\n\t" + Messages.get("status.notFoundNamePhone"));
                } else {
                   displayPlayerStatus.setText(resultText.toString());
                }// end of if block
             }// end of if block
          }// end of if block
       } catch (IOException | NumberFormatException e) {
-         showAlert(Alert.AlertType.ERROR, "Error", "Failed to read the player records!");
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("status.err.read"));
       }// end of try catch block
    }// end of handleCheckPlayer method
 

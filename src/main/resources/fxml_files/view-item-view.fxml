@@ -23,7 +23,7 @@
          <Insets bottom="2.0" left="2.0" right="2.0" top="2.0"/>
       </padding>
       <Label fx:id="itemTitleLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="75.0" prefWidth="700.0"
-             text="Item Title">
+             text="%viewitem.placeholder.title">
          <padding>
             <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
          </padding>
@@ -57,7 +57,7 @@
          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
       </VBox.margin>
       <Label fx:id="itemDescriptionLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="250.0"
-             prefWidth="700.0" text="Description" textAlignment="CENTER">
+             prefWidth="700.0" text="%viewitem.placeholder.description" textAlignment="CENTER">
          <padding>
             <Insets bottom="1.0" left="1.0" right="1.0" top="1.0"/>
          </padding>
