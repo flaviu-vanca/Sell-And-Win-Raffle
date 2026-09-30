@@ -36,6 +36,7 @@ Data is stored locally using **CSV files** and item-specific image folders under
 - 🎉 Made to be shown on a projector: full screen (`F11`, `Esc` to leave), the item picture and name, slowing number roll, confetti, keyboard only (`Space`/`Enter`). Phone numbers are never shown on the draw screen
 - 📜 Every draw is saved to a history file (time, item, ticket, winner)
 - 🛟 Crash-safe saves (write to a temp file, then replace) and an automatic backup on every start-up
+- 📊 A dashboard on the main screen: tickets sold, money collected, money still owed and what selling everything would bring, plus a progress bar and the collected/owed amount for every item
 - 🎨 Dark and light theme, switched with a button on the main screen and remembered; one stylesheet whose colours are variables, so a new theme is a handful of lines
 - 🌍 English and Romanian: every screen is translated, the language follows the system language at first and can be switched with the `RO`/`EN` button on the main screen (the choice is remembered in `settings.properties`). Texts live in `i18n/messages*.properties`
 - 🧰 Package as a **JAR** and a Windows **.exe** (Launch4j)
@@ -202,6 +203,7 @@ The UI is split into focused JavaFX controllers:
 ### Services
 
 - `RaffleDraw` — picks the winner (secure random, sold tickets only, optional exclusions); no JavaFX, fully unit tested
+- `SalesSummary` — the same figures for the whole raffle
 - `ItemSales` — tickets sold, paid and owed, and money collected/outstanding for an item (money counted in cents)
 - `Payments` — marking the tickets of a buyer paid or unpaid
 - `DrawSession` — one sitting: how many winners, who has won, who can still win ("one prize per person")
@@ -279,11 +281,11 @@ The repository contains automated tests for:
 - CSV reading and writing, including files from older versions
 - Atomic saves and backups
 - Phone validation, settings, money formatting and localized messages
-- Sales figures and payments
+- Sales figures (per item and for the whole raffle) and payments
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 18 test classes, 81 JUnit tests (`mvn test`). The controllers are not unit tested yet.
+Current test suite: 19 test classes, 84 JUnit tests (`mvn test`). The controllers are not unit tested yet.
 
 ---
 

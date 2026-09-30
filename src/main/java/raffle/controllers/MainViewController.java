@@ -7,11 +7,17 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.geometry.Pos;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import raffle.main.App;
 import raffle.models.Item;
+import raffle.models.Player;
+import raffle.services.ItemSales;
+import raffle.services.SalesSummary;
 import raffle.ui.Theme;
 import raffle.utils.AppPaths;
 import raffle.utils.BackupService;
@@ -19,6 +25,7 @@ import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.ItemImages;
 import raffle.utils.Messages;
 import raffle.utils.Money;
+import raffle.utils.PlayerDataReaderAndWriter;
 import raffle.ui.Dialogs;
 
 import java.io.File;
@@ -26,8 +33,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -43,6 +52,18 @@ public class MainViewController {
    private TableColumn<Item, Integer> ticketsColumn;
    @FXML
    private TableColumn<Item, Double> priceColumn;
+   @FXML
+   private TableColumn<Item, String> collectedColumn;
+   @FXML
+   private Label soldValue;
+   @FXML
+   private ProgressBar soldBar;
+   @FXML
+   private Label collectedValue;
+   @FXML
+   private Label outstandingValue;
+   @FXML
+   private Label potentialValue;
    @FXML
    private Button addItemButton;
    @FXML
@@ -62,9 +83,13 @@ public class MainViewController {
 
    private App app;
    private ObservableList<Item> itemList;
+   // Sales figures per item title, read from each item's ticket ledger
+   private final Map<String, ItemSales> sales = new HashMap<>();
 
    @FXML
    private void initialize() {
+      itemTable.setPlaceholder(new Label(Messages.get("main.empty")));
+
       imageColumn.setCellValueFactory(cellData -> cellData.getValue().imageProperty());
       imageColumn.setCellFactory(new Callback<>() {
          @Override
@@ -79,13 +104,13 @@ public class MainViewController {
                      setGraphic(null);
                   } else {
                      try {
-                        Image image = ItemImages.load(imagePath, 250, 250);
+                        Image image = ItemImages.load(imagePath, 180, 180);
                         imageView.setImage(image);
-                        imageView.setFitWidth(250);
-                        imageView.setFitHeight(250);
+                        imageView.setFitWidth(180);
+                        imageView.setFitHeight(180);
                         imageView.setPreserveRatio(true);
                         StackPane imagePane = new StackPane(imageView);
-                        imagePane.setPrefSize(250, 250);
+                        imagePane.setPrefSize(180, 180);
                         setGraphic(imagePane);
                      } catch (Exception e) {
                         setGraphic(null);
@@ -106,26 +131,70 @@ public class MainViewController {
                setText(null);
             } else {
                setText(item);
-               setStyle("-fx-alignment: CENTER; -fx-font-size: 30px; -fx-font-weight: bold;");
+               setStyle("-fx-alignment: CENTER; -fx-font-size: 26px; -fx-font-weight: bold;");
             }// end of if-else block
          }// end of updateItem method
       });// end of titleColumn.setCellFactory method
 
       ticketsColumn.setCellValueFactory(cellData -> cellData.getValue().ticketsProperty().asObject());
-      ticketsColumn.setCellFactory(tc -> {
-         return new TableCell<>() {
-            @Override
-            protected void updateItem(Integer item, boolean empty) {
-               super.updateItem(item, empty);
-               if (empty) {
-                  setText(null);
-               } else {
-                  setText(item.toString());
-                  setStyle("-fx-alignment: CENTER; -fx-font-size: 30px; -fx-font-weight: bold;");
-               }// end of if-else block
-            }// end of updateItem method
-         };// end of updateItem method
+      // How much of the item is sold: "8 / 20 (40%)" above a progress bar
+      ticketsColumn.setCellFactory(tc -> new TableCell<>() {
+         private final ProgressBar bar = new ProgressBar(0);
+         private final Label text = new Label();
+         private final VBox box = new VBox(6, text, bar);
+
+         {
+            box.setAlignment(Pos.CENTER);
+            bar.setMaxWidth(Double.MAX_VALUE);
+            bar.setPrefHeight(14);
+            text.getStyleClass().add("sold-text");
+         }
+
+         @Override
+         protected void updateItem(Integer ignored, boolean empty) {
+            super.updateItem(ignored, empty);
+            Item row = getTableRow() == null ? null : getTableRow().getItem();
+            if (empty || row == null) {
+               setGraphic(null);
+               return;
+            }// end of if block
+            ItemSales figures = salesOf(row);
+            text.setText(Messages.get("main.soldPercent", String.valueOf(figures.soldTickets()), String.valueOf(figures.totalTickets()),
+                                      String.valueOf(Math.round(figures.soldFraction() * 100))));
+            bar.setProgress(figures.soldFraction());
+            setGraphic(box);
+         }// end of updateItem method
       });// end of ticketsColumn.setCellFactory method
+
+      // Money collected for the item, with what is still owed underneath
+      collectedColumn.setCellFactory(tc -> new TableCell<>() {
+         private final Label money = new Label();
+         private final Label owed = new Label();
+         private final VBox box = new VBox(2, money, owed);
+
+         {
+            box.setAlignment(Pos.CENTER);
+            money.getStyleClass().add("cell-money");
+            owed.getStyleClass().add("cell-owed");
+         }
+
+         @Override
+         protected void updateItem(String ignored, boolean empty) {
+            super.updateItem(ignored, empty);
+            Item row = getTableRow() == null ? null : getTableRow().getItem();
+            if (empty || row == null) {
+               setGraphic(null);
+               return;
+            }// end of if block
+            ItemSales figures = salesOf(row);
+            money.setText(Money.format(figures.collected()));
+            boolean someOwed = figures.outstandingCents() > 0;
+            owed.setText(someOwed ? Messages.get("main.owed", Money.format(figures.outstanding())) : "");
+            owed.setVisible(someOwed);
+            owed.setManaged(someOwed);
+            setGraphic(box);
+         }// end of updateItem method
+      });// end of collectedColumn.setCellFactory method
 
       priceColumn.setCellValueFactory(cellData -> cellData.getValue().priceProperty().asObject());
       priceColumn.setCellFactory(tc -> new TableCell<>() {
@@ -136,7 +205,7 @@ public class MainViewController {
                setText(null);
             } else {
                setText(Money.format(item));
-               setStyle("-fx-alignment: CENTER; -fx-font-size: 30px; -fx-font-weight: bold;");
+               setStyle("-fx-alignment: CENTER; -fx-font-size: 26px; -fx-font-weight: bold;");
             }//end of if-else block
          }//end of updateItem method
       });// end of priceColumn.setCellFactory method
@@ -174,10 +243,11 @@ public class MainViewController {
       if (tableWidth <= 0) {
          return;
       }//end of if block
-      imageColumn.setPrefWidth(tableWidth * 0.29);
-      titleColumn.setPrefWidth(tableWidth * 0.33);
-      ticketsColumn.setPrefWidth(tableWidth * 0.17);
-      priceColumn.setPrefWidth(tableWidth * 0.17);
+      imageColumn.setPrefWidth(tableWidth * 0.20);
+      titleColumn.setPrefWidth(tableWidth * 0.24);
+      ticketsColumn.setPrefWidth(tableWidth * 0.22);
+      priceColumn.setPrefWidth(tableWidth * 0.14);
+      collectedColumn.setPrefWidth(tableWidth * 0.16);
    }//end of applyColumnWidths method
 
    @FXML
@@ -210,6 +280,7 @@ public class MainViewController {
          try {
             List<Item> items = ItemDataReaderAndWriter.readItemsFromFile(dataFilePath);
             itemList = FXCollections.observableArrayList(items);
+            loadSales(items);
             itemTable.setItems(itemList);
          } catch (IOException e) {
             showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.loadCatalog"));
@@ -217,9 +288,45 @@ public class MainViewController {
             showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.parse"));
          }
       } else {
-         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.initNeeded"), Messages.get("main.initNeeded"));
+         // A fresh install: no pop-up, the empty table says what to do
+         itemList = FXCollections.observableArrayList();
+         itemTable.setItems(itemList);
+         loadSales(List.of());
       }
    }// end of loadItemsFromCSV method
+
+   // Read each item's ticket ledger once and work out its sales figures
+   private void loadSales(List<Item> items) {
+      sales.clear();
+      for (Item item : items) {
+         List<Player> ledger = List.of();
+         Path ledgerFile = AppPaths.recordsFile(item.getTitle());
+         if (Files.exists(ledgerFile)) {
+            try {
+               ledger = PlayerDataReaderAndWriter.readPlayersFromFile(ledgerFile);
+            } catch (IOException | NumberFormatException e) {
+               System.err.println("Could not read " + ledgerFile + ": " + e.getMessage());
+            }//end of try-catch block
+         }//end of if block
+         sales.put(item.getTitle(), ItemSales.of(ledger, item.getPrice()));
+      }//end of for loop
+      updateDashboard();
+   }// end of loadSales method
+
+   private ItemSales salesOf(Item item) {
+      return sales.getOrDefault(item.getTitle(), ItemSales.of(List.of(), item.getPrice()));
+   }// end of salesOf method
+
+   // The cards above the table: the whole raffle in four numbers
+   private void updateDashboard() {
+      SalesSummary summary = SalesSummary.of(sales.values());
+      soldValue.setText(Messages.get("main.soldPercent", String.valueOf(summary.soldTickets()), String.valueOf(summary.totalTickets()),
+                                     String.valueOf(Math.round(summary.soldFraction() * 100))));
+      soldBar.setProgress(summary.soldFraction());
+      collectedValue.setText(Money.format(summary.collected()));
+      outstandingValue.setText(Money.format(summary.outstanding()));
+      potentialValue.setText(Money.format(summary.potential()));
+   }// end of updateDashboard method
 
    // Handle the Add Item button
    @FXML
@@ -242,6 +349,8 @@ public class MainViewController {
             try {
                ItemDataReaderAndWriter.writeItemsToCSV(itemList.filtered(item -> item != selectedItem), AppPaths.catalogFile());
                itemList.remove(selectedItem);
+               sales.remove(selectedItem.getTitle());
+               updateDashboard();
                archiveRecords(selectedItem.getTitle());
                deleteDirectory(selectedItem.getTitle());
                showAlert(Alert.AlertType.CONFIRMATION, Messages.get("main.deleted.title"), Messages.get("main.deleted") + "\n\n" + Messages.get("item.recordsArchived"));

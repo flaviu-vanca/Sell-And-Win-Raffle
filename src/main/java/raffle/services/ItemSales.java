@@ -39,18 +39,30 @@ public record ItemSales(int totalTickets, int soldTickets, int paidTickets, long
 
    /** Money received for paid tickets. */
    public double collected() {
-      return paidTickets * priceCents / 100.0;
+      return collectedCents() / 100.0;
    }// end of collected method
 
    /** Money still owed for sold tickets that are not paid yet. */
    public double outstanding() {
-      return unpaidTickets() * priceCents / 100.0;
+      return outstandingCents() / 100.0;
    }// end of outstanding method
 
    /** What selling every ticket would bring in. */
    public double potential() {
-      return totalTickets * priceCents / 100.0;
+      return potentialCents() / 100.0;
    }// end of potential method
+
+   public long collectedCents() {
+      return paidTickets * priceCents;
+   }// end of collectedCents method
+
+   public long outstandingCents() {
+      return unpaidTickets() * priceCents;
+   }// end of outstandingCents method
+
+   public long potentialCents() {
+      return totalTickets * priceCents;
+   }// end of potentialCents method
 
    /** Share of tickets sold, 0 to 1. */
    public double soldFraction() {

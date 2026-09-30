@@ -84,11 +84,13 @@ public class App extends Application {
             try {
                showMainView();
             } catch (Exception e) {
+               e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadApp"), true);
             }
          });
          pause.play();
       } catch (Exception e) {
+         e.printStackTrace();// the dialog below says what failed, the stack trace says why
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showLoadingView method
@@ -113,6 +115,7 @@ public class App extends Application {
 
          primaryStage.show();
       } catch (Exception e) {
+         e.printStackTrace();// the dialog below says what failed, the stack trace says why
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showMainView method
@@ -134,6 +137,7 @@ public class App extends Application {
                showMainView();
                primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
+               e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadDraw"), true);
             }
          });// end of setOnCloseRequest method
@@ -142,6 +146,7 @@ public class App extends Application {
          primaryStage.setMinHeight(800); // Set minimum height
          primaryStage.show();
       } catch (Exception e) {
+         e.printStackTrace();// the dialog below says what failed, the stack trace says why
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showDrawView method
@@ -163,6 +168,7 @@ public class App extends Application {
                showMainView();
                primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
+               e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadItem"), true);
             }
          });// end of setOnCloseRequest method
@@ -171,6 +177,7 @@ public class App extends Application {
          primaryStage.setMinHeight(800); // Set minimum height
          primaryStage.show();
       } catch (Exception e) {
+         e.printStackTrace();// the dialog below says what failed, the stack trace says why
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showViewItemView method
@@ -192,12 +199,14 @@ public class App extends Application {
                showMainView();
                primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
+               e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadAddItem"), true);
             }
          });// end of setOnCloseRequest method
 
          primaryStage.show();// show the stage
       } catch (Exception e) {
+         e.printStackTrace();// the dialog below says what failed, the stack trace says why
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showAddItemView method
@@ -228,6 +237,7 @@ public class App extends Application {
                showMainView();
                primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
+               e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadAddPlayer"), true);
             }
          });
@@ -237,6 +247,7 @@ public class App extends Application {
          primaryStage.show();
 
       } catch (Exception e) {
+         e.printStackTrace();// the dialog below says what failed, the stack trace says why
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showAddPlayerView method
