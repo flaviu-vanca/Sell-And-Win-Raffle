@@ -79,7 +79,8 @@ public class PlayerStatusController {
                                                         matchingPlayer.getName(),
                                                         matchingPlayer.getPhoneNumber(),
                                                         String.valueOf(matchingPlayer.getNumberOfTickets()),
-                                                        String.valueOf(matchingPlayer.getId())));
+                                                        String.valueOf(matchingPlayer.getId()),
+                                                        paymentText(List.of(matchingPlayer))));
             }// end of if/else block
          } else {
             Map<String, List<Player>> playersByPhoneNumber = matchingPlayers.stream()
@@ -103,7 +104,7 @@ public class PlayerStatusController {
                   int totalTickets = players.size();
                   List<Integer> ids = players.stream().map(Player::getId).collect(Collectors.toList());
 
-                  resultText.append("\n").append(Messages.get("status.block", name, String.valueOf(totalTickets), ids.toString()));
+                  resultText.append("\n").append(Messages.get("status.block", name, String.valueOf(totalTickets), ids.toString(), paymentText(players)));
                }// end of for loop
                // Display the result
                displayPlayerStatus.setText(resultText.toString());
@@ -125,7 +126,7 @@ public class PlayerStatusController {
                      int totalTickets = players.size();
                      List<Integer> ids = players.stream().map(Player::getId).collect(Collectors.toList());
 
-                     resultText.append(Messages.get("status.blockPhone", name, phone, String.valueOf(totalTickets), ids.toString())).append("\n");
+                     resultText.append(Messages.get("status.blockPhone", name, phone, String.valueOf(totalTickets), ids.toString(), paymentText(players))).append("\n");
                   }// end of inner for loop
                }// end of for loop
 
@@ -141,6 +142,16 @@ public class PlayerStatusController {
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("status.err.read"));
       }// end of try catch block
    }// end of handleCheckPlayer method
+
+   // "paid", "not paid" or "2 of 3 tickets paid" for the tickets of one buyer
+   private static String paymentText(List<Player> tickets) {
+      long paid = tickets.stream().filter(Player::isPaid).count();
+      if (paid == tickets.size()) {
+         return Messages.get("status.pay.all");
+      }// end of if block
+      return paid == 0 ? Messages.get("status.pay.none")
+                       : Messages.get("status.pay.some", String.valueOf(paid), String.valueOf(tickets.size()));
+   }// end of paymentText method
 
    // Method to add a tooltip to a control
    private void addTooltip(Control control, String text) {

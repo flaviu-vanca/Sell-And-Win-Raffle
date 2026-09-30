@@ -9,9 +9,12 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 import raffle.models.Item;
 import raffle.models.Player;
+import raffle.services.ItemSales;
+import raffle.services.Payments;
 import raffle.utils.AppPaths;
 import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.Messages;
+import raffle.utils.Money;
 import raffle.utils.PhoneNumbers;
 import raffle.utils.PlayerDataReaderAndWriter;
 
@@ -19,7 +22,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -36,6 +43,22 @@ public class AddPlayerController {
    private TableColumn<Player, String> phoneNumberColumn;
    @FXML
    private TableColumn<Player, Integer> numberOfTicketsColumn;
+   @FXML
+   private TableColumn<Player, Boolean> paidColumn;
+   @FXML
+   private TableColumn<Player, String> soldAtColumn;
+   @FXML
+   private Label itemHeader;
+   @FXML
+   private Label salesSummary;
+   @FXML
+   private Label totalLabel;
+   @FXML
+   private CheckBox paidCheck;
+   @FXML
+   private Button markPaidButton;
+   @FXML
+   private Button markUnpaidButton;
    @FXML
    private TextField playerName;
    @FXML
@@ -56,6 +79,7 @@ public class AddPlayerController {
    private ObservableList<Player> playerList;
    private List<Integer> availableIDs;
    private String itemTitle;
+   private double itemPrice;
    private Path recordsDirectory;
 
    @FXML
@@ -69,12 +93,49 @@ public class AddPlayerController {
       addTooltip(clearFieldsButton, Messages.get("player.tip.clear"));
       addTooltip(refreshButton, Messages.get("player.tip.refresh"));
       addTooltip(removePlayerButton, Messages.get("player.tip.deleteOne"));
+      addTooltip(markPaidButton, Messages.get("player.tip.markPaid"));
+      addTooltip(markUnpaidButton, Messages.get("player.tip.markUnpaid"));
+      addTooltip(totalLabel, Messages.get("player.tip.total"));
+      addTooltip(paidCheck, Messages.get("player.tip.paidCheck"));
+
+      // The amount to pay follows the number of tickets being typed
+      numberOfTickets.textProperty().addListener((observable, oldText, newText) -> updateTotal());
+      updateTotal();
 
       // Initialize the player table
       IDColumn.setCellValueFactory(cellData -> cellData.getValue().idProperty().asObject());
       nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
       phoneNumberColumn.setCellValueFactory(cellData -> cellData.getValue().phoneNumberProperty());
       numberOfTicketsColumn.setCellValueFactory(cellData -> cellData.getValue().numberOfTicketsProperty().asObject());
+      paidColumn.setCellValueFactory(cellData -> cellData.getValue().paidProperty());
+      soldAtColumn.setCellValueFactory(cellData -> cellData.getValue().soldAtProperty());
+
+      // Paid or unpaid, only for tickets that have a buyer; the colour comes from the stylesheet
+      paidColumn.setCellFactory(tc -> new TableCell<>() {
+         @Override
+         protected void updateItem(Boolean paid, boolean empty) {
+            super.updateItem(paid, empty);
+            getStyleClass().removeAll("paid-yes", "paid-no");
+            Player row = getTableRow() == null ? null : getTableRow().getItem();
+            if (empty || paid == null || row == null || ! row.isSold()) {
+               setText(null);
+            } else {
+               setText(Messages.get(paid ? "player.paid.yes" : "player.paid.no"));
+               getStyleClass().add(paid ? "paid-yes" : "paid-no");
+               setStyle("-fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold;");
+            }// end of if-else block
+         }
+      });
+
+      // When the ticket was sold, in the local format of the active language
+      soldAtColumn.setCellFactory(tc -> new TableCell<>() {
+         @Override
+         protected void updateItem(String soldAt, boolean empty) {
+            super.updateItem(soldAt, empty);
+            setText(empty || soldAt == null || soldAt.isBlank() ? null : formatSoldAt(soldAt));
+            setStyle("-fx-alignment: CENTER; -fx-font-size: 14px;");
+         }
+      });
 
       // Add a listener to the selection model of the playerTable
       playerTable.getSelectionModel().getSelectedItems().addListener((ListChangeListener.Change<? extends Player> change) -> {
@@ -150,23 +211,31 @@ public class AddPlayerController {
       // Enable multiple row selection
       playerTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-      // Adjust columns dynamically with the table's width
+      // Adjust columns dynamically with the table's width (also applied once right away, not only after a resize)
+      playerTable.widthProperty().addListener((obs, oldWidth, newWidth) -> applyColumnWidths(newWidth.doubleValue()));
+
       Platform.runLater(() -> {
          Stage stage = (Stage) playerTable.getScene().getWindow();
-
-         playerTable.widthProperty().addListener((obs, oldWidth, newWidth) -> {
-            double tableWidth = newWidth.doubleValue();
-            IDColumn.setPrefWidth(tableWidth * 0.10);
-            nameColumn.setPrefWidth(tableWidth * 0.40);
-            phoneNumberColumn.setPrefWidth(tableWidth * 0.38);
-            numberOfTicketsColumn.setPrefWidth(tableWidth * 0.12);
-         });// end of widthProperty method
+         applyColumnWidths(playerTable.getWidth());
 
          // Ensure the table resizes with the window
          stage.widthProperty().addListener((obs, oldVal, newVal) -> playerTable.setPrefWidth(newVal.doubleValue()));
          stage.heightProperty().addListener((obs, oldVal, newVal) -> playerTable.setPrefHeight(newVal.doubleValue()));
       });// end of Platform.runLater method
    }// end of initialize method
+
+   // Columns share the table width; 4% is left for the vertical scrollbar so no horizontal scrollbar appears
+   private void applyColumnWidths(double tableWidth) {
+      if (tableWidth <= 0) {
+         return;
+      }// end of if block
+      IDColumn.setPrefWidth(tableWidth * 0.06);
+      nameColumn.setPrefWidth(tableWidth * 0.23);
+      phoneNumberColumn.setPrefWidth(tableWidth * 0.17);
+      numberOfTicketsColumn.setPrefWidth(tableWidth * 0.14);
+      paidColumn.setPrefWidth(tableWidth * 0.13);
+      soldAtColumn.setPrefWidth(tableWidth * 0.23);
+   }// end of applyColumnWidths method
 
    // Load players from the records directory based on item title
    private void loadPlayersFromCSV() {
@@ -178,6 +247,7 @@ public class AddPlayerController {
             List<Player> players = PlayerDataReaderAndWriter.readPlayersFromFile(dataFilePath);
             playerList.setAll(players);
             calculateAvailableIDs(players);
+            updateSalesHeader();
          } catch (IOException e) {
             showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("err.loadRecords", itemTitle));
          } catch (NumberFormatException e) {
@@ -309,6 +379,9 @@ public class AddPlayerController {
          return;
       }// end of if block
 
+      boolean paidNow = paidCheck.isSelected();
+      String soldAt = Instant.now().toString();
+
       // Assign random IDs to the new tickets
       Random random = new Random();
       List<Integer> availableBeforeSale = new ArrayList<>(availableIDs);
@@ -344,8 +417,10 @@ public class AddPlayerController {
             existingPlayer.get().setName(name);
             existingPlayer.get().setPhoneNumber(phone);
             existingPlayer.get().setNumberOfTickets(finalAdditionalTickets);
+            existingPlayer.get().setPaid(paidNow);
+            existingPlayer.get().setSoldAt(soldAt);
          } else {
-            Player newPlayer = new Player(id, name, phone, finalAdditionalTickets);
+            Player newPlayer = new Player(id, name, phone, finalAdditionalTickets, paidNow, soldAt);
             playerList.add(newPlayer);
          }// end of if-else block
       });// end of forEach loop
@@ -367,7 +442,9 @@ public class AddPlayerController {
                             .collect(Collectors.joining(", "));
 
       // Show a confirmation message
-      showAlert(Alert.AlertType.CONFIRMATION, Messages.get("player.added.title"), Messages.get("player.addedBody", name, IDs));
+      String total = Money.format(ItemSales.of(List.of(), itemPrice).priceOf(tickets));
+      showAlert(Alert.AlertType.CONFIRMATION, Messages.get("player.added.title"),
+                Messages.get("player.addedBody", name, IDs, total, Messages.get(paidNow ? "player.sale.paid" : "player.sale.unpaid")));
 
       updateTicketsLeftLabel();
       clearFields();
@@ -422,9 +499,7 @@ public class AddPlayerController {
                relatedPlayers.forEach(player -> player.setNumberOfTickets(remainingTickets));
 
                // Update the selected player's entry
-               selectedPlayer.setName("");
-               selectedPlayer.setPhoneNumber("");
-               selectedPlayer.setNumberOfTickets(0);
+               selectedPlayer.clear();
 
                availableIDs.add(removedID);
             }// end of for loop
@@ -454,7 +529,76 @@ public class AddPlayerController {
       playerName.clear();
       phoneNumber.clear();
       numberOfTickets.clear();
+      paidCheck.setSelected(true);
    }// end of clearFields method
+
+   // Record that the selected buyers have paid (or not): all tickets of a buyer are paid together
+   @FXML
+   private void handleMarkPaid() {
+      markSelected(true);
+   }// end of handleMarkPaid method
+
+   @FXML
+   private void handleMarkUnpaid() {
+      markSelected(false);
+   }// end of handleMarkUnpaid method
+
+   private void markSelected(boolean paid) {
+      Path recordsFilePath = AppPaths.recordsFile(itemTitle);
+      if (isFileAccessibleForWriting(recordsFilePath)) {
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.fileAccess"), Messages.get("err.fileOpen", itemTitle + ".csv"));
+         return;
+      }// end of if block
+
+      Set<String> buyers = new HashSet<>();
+      for (Player selected : playerTable.getSelectionModel().getSelectedItems()) {
+         if (selected.isSold()) {
+            buyers.add(selected.buyerKey());
+         }// end of if block
+      }// end of for loop
+      if (buyers.isEmpty()) {
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.noSelection"), Messages.get("player.selectBuyer"));
+         return;
+      }// end of if block
+
+      if (Payments.setPaid(playerList, buyers, paid) > 0) {
+         try {
+            PlayerDataReaderAndWriter.writePlayersToCSV(new ArrayList<>(playerList), recordsFilePath);
+         } catch (IOException e) {
+            showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("player.removeFailed", e.getMessage()));
+         }// end of try-catch block
+      }// end of if block
+      handleRefresh();// shows what is really on disk, and the new totals
+   }// end of markSelected method
+
+   // Amount to pay for the number of tickets being typed
+   private void updateTotal() {
+      try {
+         int tickets = Integer.parseInt(numberOfTickets.getText().trim());
+         totalLabel.setText(tickets > 0 ? Messages.get("player.label.total", Money.format(ItemSales.of(List.of(), itemPrice).priceOf(tickets))) : "");
+      } catch (NumberFormatException e) {
+         totalLabel.setText("");
+      }// end of try-catch block
+   }// end of updateTotal method
+
+   // Item name and price above the list, money collected and still owed at the right
+   private void updateSalesHeader() {
+      ItemSales sales = ItemSales.of(playerList, itemPrice);
+      itemHeader.setText(Messages.get("player.itemHeader", itemTitle, Money.format(itemPrice)));
+      salesSummary.setText(Messages.get("player.summary", Money.format(sales.collected()), Money.format(sales.outstanding())));
+      updateTotal();
+   }// end of updateSalesHeader method
+
+   private static String formatSoldAt(String soldAt) {
+      try {
+         return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+                                 .withLocale(Messages.locale())
+                                 .withZone(ZoneId.systemDefault())
+                                 .format(Instant.parse(soldAt));
+      } catch (DateTimeParseException e) {
+         return soldAt;
+      }// end of try-catch block
+   }// end of formatSoldAt method
 
    // Refresh the player list
    @FXML
@@ -482,6 +626,7 @@ public class AddPlayerController {
    public void setItem(Item selectedItem) {
       if (selectedItem != null) {
          this.itemTitle = selectedItem.getTitle();
+         this.itemPrice = selectedItem.getPrice();
          loadPlayersFromCSV();
       }// end of if block
    }// end of setItem method

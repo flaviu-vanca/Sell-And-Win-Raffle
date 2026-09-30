@@ -27,6 +27,7 @@ Data is stored locally using **CSV files** and item-specific image folders under
 - 🏷️ Create raffle items with title, description, ticket count, and ticket price
 - 🖼️ Store and browse item images (with a configurable default image)
 - 👤 Sell tickets to players and auto-assign ticket IDs
+- 💶 Price per ticket, the amount to pay shown while typing, "paid now" or owed, and a per-item summary of money collected and still outstanding; mark a buyer's tickets as paid or unpaid later
 - ♻️ Reuse ticket IDs when player records are removed
 - 📦 Track remaining ticket inventory per item
 - 🔎 Search player status by name, phone number, or ticket ID
@@ -139,6 +140,9 @@ Stores the ticket ledger for a single raffle item with:
 - Player name
 - Phone number
 - Number of tickets associated with that buyer
+- Paid (`true`/`false`) and the time of sale (UTC, ISO-8601)
+
+Ledgers written by older versions have only the first four columns. They are read as they are (their sold tickets count as paid, since payments were not tracked) and get the new columns the next time they are saved.
 
 ---
 
@@ -197,6 +201,8 @@ The UI is split into focused JavaFX controllers:
 ### Services
 
 - `RaffleDraw` — picks the winner (secure random, sold tickets only, optional exclusions); no JavaFX, fully unit tested
+- `ItemSales` — tickets sold, paid and owed, and money collected/outstanding for an item (money counted in cents)
+- `Payments` — marking the tickets of a buyer paid or unpaid
 - `DrawSession` — one sitting: how many winners, who has won, who can still win ("one prize per person")
 - `DrawHistory` — append-only audit log of draws
 
@@ -211,6 +217,7 @@ The UI is split into focused JavaFX controllers:
 - `SafeFiles` — atomic writes with a `.bak` of the previous version
 - `BackupService` — start-up snapshots and archiving of deleted items
 - `AppPaths` — the one place that knows where data lives
+- `Money` — amounts in the active language and the `currency` setting (EUR by default, for example `currency=RON` in `settings.properties`)
 - `PhoneNumbers` — phone validation and normalisation (kept as text, 7–15 digits, optional `+`)
 - `Messages`, `AppSettings`, `Fxml` — localized text from the resource bundles, the saved language, and FXML loading with the active bundle
 
@@ -268,11 +275,12 @@ The repository contains automated tests for:
 - Draw history
 - CSV reading and writing, including files from older versions
 - Atomic saves and backups
-- Phone validation, settings and localized messages
+- Phone validation, settings, money formatting and localized messages
+- Sales figures and payments
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 14 test classes, 61 JUnit tests (`mvn test`). The controllers are not unit tested yet.
+Current test suite: 17 test classes, 76 JUnit tests (`mvn test`). The controllers are not unit tested yet.
 
 ---
 

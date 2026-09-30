@@ -11,7 +11,7 @@ import java.util.List;
 
 public class PlayerDataReaderAndWriter {
 
-   static final String HEADER = "ID,Name,Phone Number,Number of Tickets";
+   static final String HEADER = "ID,Name,Phone Number,Number of Tickets,Paid,Sold At";
 
    public static List<Player> readPlayersFromFile(Path filePath) throws IOException {
       List<Player> players = new ArrayList<>();
@@ -30,7 +30,12 @@ public class PlayerDataReaderAndWriter {
             String ticketsText = fields[3].trim();
             int numberOfTickets = ticketsText.isEmpty() ? 0 : Integer.parseInt(ticketsText);
 
-            players.add(new Player(id, name, phoneNumber, numberOfTickets));
+            // Ledgers written before payments were tracked have 4 columns: their sold tickets count as paid
+            boolean sold = ! name.isBlank();
+            boolean paid = fields.length >= 5 && ! fields[4].isBlank() ? Boolean.parseBoolean(fields[4].trim()) : sold;
+            String soldAt = fields.length >= 6 ? fields[5].trim() : "";
+
+            players.add(new Player(id, name, phoneNumber, numberOfTickets, paid, soldAt));
          }// end of if statement
       }// end of for loop
       return players;
@@ -45,7 +50,9 @@ public class PlayerDataReaderAndWriter {
                                                       String.valueOf(player.getId()),
                                                       CsvUtil.quote(player.getName()),
                                                       CsvUtil.quote(player.getPhoneNumber()),
-                                                      String.valueOf(player.getNumberOfTickets()))));
+                                                      String.valueOf(player.getNumberOfTickets()),
+                                                      player.isSold() ? String.valueOf(player.isPaid()) : "",
+                                                      player.getSoldAt())));
       SafeFiles.writeLinesAtomically(filePath, lines);
    }// end of writePlayersToCSV method
 

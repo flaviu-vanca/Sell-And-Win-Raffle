@@ -17,6 +17,7 @@ import raffle.utils.BackupService;
 import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.ItemImages;
 import raffle.utils.Messages;
+import raffle.utils.Money;
 
 import java.io.File;
 import java.io.IOException;
@@ -130,7 +131,7 @@ public class MainViewController {
             if (empty) {
                setText(null);
             } else {
-               setText(String.format(Messages.locale(), "\u20AC%.2f", item));// 15.00 or 15,00 depending on the language
+               setText(Money.format(item));
                setStyle("-fx-alignment: CENTER; -fx-font-size: 30px; -fx-font-weight: bold;");
             }//end of if-else block
          }//end of updateItem method

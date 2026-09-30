@@ -1,5 +1,6 @@
 package raffle.models;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 
@@ -8,12 +9,25 @@ public class Player {
    private final SimpleStringProperty name;
    private final SimpleStringProperty phoneNumber;
    private final SimpleIntegerProperty numberOfTickets;
+   private final SimpleBooleanProperty paid;
+   private final SimpleStringProperty soldAt;
 
+   /** A ticket row without payment details: a sold ticket counts as paid, which is what older ledgers meant. */
    public Player(int id, String name, String phoneNumber, int numberOfTickets) {
+      this(id, name, phoneNumber, numberOfTickets, name != null && ! name.isBlank(), "");
+   }
+
+   /**
+    * @param paid   whether the buyer has paid for this ticket (meaningless for unsold rows)
+    * @param soldAt when the ticket was sold, as an ISO-8601 instant, or empty when unknown
+    */
+   public Player(int id, String name, String phoneNumber, int numberOfTickets, boolean paid, String soldAt) {
       this.id = new SimpleIntegerProperty(id);
       this.name = new SimpleStringProperty(name);
       this.phoneNumber = new SimpleStringProperty(phoneNumber);
       this.numberOfTickets = new SimpleIntegerProperty(numberOfTickets);
+      this.paid = new SimpleBooleanProperty(paid);
+      this.soldAt = new SimpleStringProperty(soldAt == null ? "" : soldAt);
    }
 
    public int getId() {
@@ -48,6 +62,22 @@ public class Player {
       return numberOfTickets;
    }
 
+   public boolean isPaid() {
+      return paid.get();
+   }
+
+   public SimpleBooleanProperty paidProperty() {
+      return paid;
+   }
+
+   public String getSoldAt() {
+      return soldAt.get();
+   }
+
+   public SimpleStringProperty soldAtProperty() {
+      return soldAt;
+   }
+
    /** A ticket row is sold when a buyer name is set; unsold rows are kept in the ledger with empty fields. */
    public boolean isSold() {
       String buyer = name.get();
@@ -72,5 +102,22 @@ public class Player {
 
    public void setNumberOfTickets(int numberOfTickets) {
       this.numberOfTickets.set(numberOfTickets);
+   }
+
+   public void setPaid(boolean paid) {
+      this.paid.set(paid);
+   }
+
+   public void setSoldAt(String soldAt) {
+      this.soldAt.set(soldAt == null ? "" : soldAt);
+   }
+
+   /** Makes the row an unsold ticket again (used when a record is removed). */
+   public void clear() {
+      setName("");
+      setPhoneNumber("");
+      setNumberOfTickets(0);
+      setPaid(false);
+      setSoldAt("");
    }
 }

@@ -63,4 +63,43 @@ class PlayerDataReaderAndWriterTest {
       assertEquals(3, players.getFirst().getId(), "the caller's list must not be reordered");
       assertEquals(List.of(1, 3), PlayerDataReaderAndWriter.readPlayersFromFile(file).stream().map(Player::getId).toList());
    }
+
+   @Test
+   void paymentStateAndSaleTimeSurviveARoundTrip() throws IOException {
+      Path file = dir.resolve("Bike.csv");
+      List<Player> players = List.of(new Player(1, "", "", 0, false, ""),
+                                     new Player(2, "Ana", "0700000001", 2, true, "2026-09-30T18:00:00Z"),
+                                     new Player(3, "Ana", "0700000001", 2, false, "2026-09-30T18:05:00Z"));
+
+      PlayerDataReaderAndWriter.writePlayersToCSV(players, file);
+      List<Player> read = PlayerDataReaderAndWriter.readPlayersFromFile(file);
+
+      assertTrue(read.get(1).isPaid());
+      assertFalse(read.get(2).isPaid());
+      assertEquals("2026-09-30T18:05:00Z", read.get(2).getSoldAt());
+      assertFalse(read.get(0).isSold());
+      assertEquals("", read.get(0).getSoldAt());
+   }
+
+   @Test
+   void unsoldRowsHaveNoPaymentColumns() throws IOException {
+      Path file = dir.resolve("Bike.csv");
+      PlayerDataReaderAndWriter.writePlayersToCSV(List.of(new Player(1, "", "", 0)), file);
+
+      assertEquals(PlayerDataReaderAndWriter.HEADER, Files.readAllLines(file).getFirst());
+      assertEquals("1,\"\",\"\",0,,", Files.readAllLines(file).get(1));
+   }
+
+   @Test
+   void soldTicketsFromLedgersWithoutPaymentColumnsCountAsPaid() throws IOException {
+      Path file = dir.resolve("legacy.csv");
+      Files.write(file, List.of("ID,Name,Phone Number,Number of Tickets",
+                                "1,,,",
+                                "2,\"Ion Popescu\",\"0712345678\",1"));
+
+      List<Player> read = PlayerDataReaderAndWriter.readPlayersFromFile(file);
+
+      assertTrue(read.get(1).isPaid(), "old ledgers had no payment tracking, so nothing is shown as owed");
+      assertEquals("", read.get(1).getSoldAt());
+   }
 }

@@ -414,3 +414,44 @@
     -fx-border-color: #9c7945;
     -fx-text-fill: #00ffea;
 }
+
+.add-player .sale-title {
+    /* item name and price above the ticket list */
+    -fx-font-size: 26px;
+    -fx-text-fill: white;
+}
+
+.add-player .sale-summary {
+    /* money collected and still owed */
+    -fx-font-size: 20px;
+    -fx-text-fill: #d6c3a0;
+}
+
+.add-player .sale-total {
+    /* amount to pay for the sale being typed */
+    -fx-font-size: 22px;
+    -fx-text-fill: #ffd700;
+}
+
+.add-player .check-box {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #d6c3a0;
+}
+
+.add-player .check-box .box {
+    -fx-background-color: #2c3e50;
+    -fx-border-color: #9c7945;
+}
+
+.add-player .check-box:selected .mark {
+    -fx-background-color: #00ffea;
+}
+
+.table-cell.paid-yes {
+    -fx-text-fill: #1e8e3e;
+}
+
+.table-cell.paid-no {
+    -fx-text-fill: #d35400;
+}
