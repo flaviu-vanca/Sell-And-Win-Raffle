@@ -1,230 +1,260 @@
-/* styles.css */
+/* Sell & Win Raffle: one stylesheet, two themes.
+ *
+ * All colours are variables on .root. The dark theme is the default; Theme adds the style class "theme-light" to
+ * the scene root to switch. Everything below refers to the -app-* variables, never to a hard-coded colour, so a
+ * new theme only has to redefine the variables. The -fx-base family re-colours every standard control (tables,
+ * text fields, spinners, scroll bars, dialogs) at once.
+ */
 .root {
-    /* style the root node */
-    -fx-font-family: "Arial";
+    /* ---- dark theme ---- */
+    -fx-base: #2b3b4e;
+    -fx-background: #1f2d3d;
+    -fx-control-inner-background: #22313f;
+    -fx-control-inner-background-alt: #283a4b;
+    -fx-accent: #1e88c7;
+    -fx-focus-color: #00c2b2;
+    -fx-faint-focus-color: transparent;
+
+    -app-bg: #1f2d3d;
+    -app-surface: #2b3b4e;
+    -app-panel: rgba(0, 0, 0, 0.22);
+    -app-border: #9c7945;
+    -app-text: #eef2f6;
+    -app-text-muted: #c9b48a;
+    -app-accent: #00ffea;
+    -app-gold: #ffd700;
+    -app-ok: #5fd38d;
+    -app-warn: #ffa15c;
+    -app-primary: #3498db;
+    -app-primary-hover: #5dade2;
+    -app-on-primary: #0b1a2a;
+
+    /* Segoe UI on Windows, Helvetica Neue on macOS, DejaVu Sans on Linux: whatever exists first */
+    -fx-font-family: "Segoe UI", "Helvetica Neue", "DejaVu Sans", Arial, sans-serif;
+}
+
+.root.theme-light {
+    -fx-base: #ece6d9;
+    -fx-background: #f4f1ea;
+    -fx-control-inner-background: #ffffff;
+    -fx-control-inner-background-alt: #f7f4ee;
+    -fx-accent: #8cc8ee;
+    -fx-focus-color: #0b7285;
+
+    -app-bg: #f4f1ea;
+    -app-surface: #ffffff;
+    -app-panel: rgba(0, 0, 0, 0.05);
+    -app-border: #9c7945;
+    -app-text: #1d2733;
+    -app-text-muted: #6b5a3a;
+    -app-accent: #0b7285;
+    -app-gold: #a06a00;
+    -app-ok: #1e8e3e;
+    -app-warn: #c2571a;
+    -app-primary: #2f7fc1;
+    -app-primary-hover: #256aa3;
+    -app-on-primary: #ffffff;
+}
+
+/* ---- shared controls ---- */
+
+.label {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
 }
 
 .text-field {
-    /* style the text field */
-    -fx-font-family: "Arial Unicode MS";
     -fx-font-size: 20px;
-    -fx-text-alignment: center;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-width: 2;
+    -fx-border-color: -app-border;
 }
 
 .text-area {
-    /* style the text area */
-    -fx-font-family: "Arial Unicode MS";
     -fx-font-size: 20px;
 }
 
 .button {
-    /* style the button */
-    -fx-background-color: #2c3e50;
-    -fx-text-fill: white;
-    -fx-font-family: "Arial Unicode MS";
+    -fx-background-color: -app-primary;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-width: 2;
+    -fx-border-color: -app-border;
+    -fx-text-fill: -app-on-primary;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16 8 16;
+    -fx-cursor: hand;
 }
 
-.label {
-    /* style the label */
-    -fx-font-size: 20px;
-    -fx-font-family: "Arial Unicode MS";
+.button:hover {
+    -fx-background-color: -app-primary-hover;
+}
+
+.button:disabled {
+    -fx-opacity: 0.45;
+}
+
+.check-box {
+    -fx-font-size: 18px;
     -fx-font-weight: bold;
+    -fx-text-fill: -app-text-muted;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: -app-accent;
 }
 
 .h-box {
-    /* style the horizontal box */
     -fx-border-width: 1;
-    -fx-border-color: #9c7945;
+    -fx-border-color: -app-border;
     -fx-padding: 10;
 }
 
 .v-box {
-    /* style the vertical box */
     -fx-border-width: 1;
-    -fx-border-color: #9c7945;
+    -fx-border-color: -app-border;
     -fx-padding: 2;
 }
 
 .tooltip {
-    /* style the tooltip */
-    -fx-font-size: 25px;
-    -fx-font-family: "Arial Unicode MS";
-    -fx-border-radius: 10;
+    -fx-font-size: 16px;
+    -fx-font-weight: normal;
+    -fx-text-fill: -app-text;
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
     -fx-border-width: 2;
-    -fx-border-color:  #9c7945;
-    -fx-background-color: black;
-    -fx-background-radius: 10;
-    -fx-text-fill: #9c7945;
-
-}
-
-.button:hover {
-    /* style the button when hovered */
-    -fx-background-color: #34495e;
+    -fx-border-color: -app-border;
 }
 
 .table-view {
-    /* style the table view */
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
-    -fx-background-color: #34495e;
-    -fx-text-fill: white;
     -fx-border-width: 1;
-    -fx-border-color: #9c7945;
+    -fx-border-color: -app-border;
 }
 
+.table-cell.paid-yes {
+    -fx-text-fill: -app-ok;
+}
+
+.table-cell.paid-no {
+    -fx-text-fill: -app-warn;
+}
+
+/* ---- dialogs (alerts and confirmations) ---- */
+
+.dialog-pane {
+    -fx-background-color: -app-surface;
+    -fx-border-width: 2;
+    -fx-border-color: -app-border;
+}
+
+.dialog-pane .content.label {
+    -fx-font-size: 16px;
+    -fx-font-weight: normal;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: -app-panel;
+}
+
+.dialog-pane .button-bar .button {
+    -fx-font-size: 16px;
+}
+
+/* ---- loading screen ---- */
+
 .loading-view {
-    /* style the loading view */
     -fx-background-color: #9c7945;
     -fx-background-radius: 22;
-
 }
 
 .loading-view .progress-bar {
-    /* style the progress bar */
-    -fx-accent: #9c7945; /* change the color of the progress bar */
-    -fx-translate-y: -50px; /* move the progress bar 50px above the bottom */
+    -fx-accent: #9c7945;
+    -fx-translate-y: -50px;
     -fx-border-radius: 5;
     -fx-border-width: 2;
     -fx-border-color: #9c7945;
 }
 
-.main-view {
-    /* style the main view */
-    -fx-background-color: #34495e;
+/* ---- screens ---- */
+
+/* only the root of a screen gets the background (a screen's class is also set on some of its children) */
+.root.main-view,
+.root.draw-view,
+.root.add-item,
+.root.add-player,
+.root.view-item,
+.root.player-status {
+    -fx-background-color: -app-bg;
 }
 
-.main-view .button {
-    /* style the buttons in the main view */
-    -fx-background-color: #3498db;
-    -fx-background-radius: 10;
-    -fx-text-fill: black;
-    -fx-border-width: 2;
-    -fx-border-radius: 10;
-    -fx-border-color: #9c7945;
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
-}
-
-.main-view .button:hover {
-    /* style the buttons in the main view when hovered */
-    -fx-background-color: #2980b9;
-}
-
-.main-view #image {
-    /* style the title column in the main view */
-    -fx-border-width: 1;
-    -fx-border-color: #9c7945;
-}
-
-.main-view #availableTickets {
-    /* style the title column in the main view */
-    -fx-border-width: 1;
-    -fx-border-color: #9c7945;
-}
-
-.main-view #ticketPrice {
-    /* style the title column in the main view */
-    -fx-border-width: 1;
-    -fx-border-color: #9c7945;
-}
-
+.main-view #image,
+.main-view #availableTickets,
+.main-view #ticketPrice,
 .main-view #title {
-    /* style the title column in the main view */
     -fx-border-width: 1;
-    -fx-border-color: #9c7945;
-
+    -fx-border-color: -app-border;
 }
 
-.draw-view {
-    /* style the draw view */
-    -fx-background-color: #34495e;
-}
+/* draw screen */
 
 .draw-view .button {
-    /* style the buttons in the draw view */
-    -fx-background-color: #3498db;
-    -fx-background-radius: 15;
-    -fx-text-fill: black;
-    -fx-border-width: 2;
-    -fx-border-radius: 15;
-    -fx-border-color: #9c7945;
     -fx-font-size: 18px;
-    -fx-font-weight: bold;
-}
-
-.draw-view .button:hover {
-    /* style the buttons in the draw view when hovered */
-    -fx-background-color: #2980b9;
 }
 
 .draw-view .draw-title {
-    /* item being drawn */
     -fx-font-size: 44px;
-    -fx-text-fill: white;
+    -fx-text-fill: -app-text;
 }
 
 .draw-view .draw-subtitle {
-    /* "5 of 20 tickets sold" */
     -fx-font-size: 24px;
-    -fx-text-fill: #d6c3a0;
+    -fx-text-fill: -app-text-muted;
 }
 
 .draw-view .draw-number {
-    /* the rolling ticket number */
     -fx-font-size: 150px;
-    -fx-text-fill: #00ffea;
-    -fx-background-color: rgba(0, 0, 0, 0.25);
+    -fx-text-fill: -app-accent;
+    -fx-background-color: -app-panel;
     -fx-background-radius: 18;
     -fx-border-radius: 18;
     -fx-border-width: 2;
-    -fx-border-color: #9c7945;
+    -fx-border-color: -app-border;
 }
 
 .draw-view .draw-number.revealed {
-    /* the number has landed on the winner */
-    -fx-text-fill: #ffd700;
-    -fx-border-color: #ffd700;
+    -fx-text-fill: -app-gold;
+    -fx-border-color: -app-gold;
     -fx-effect: dropshadow(gaussian, rgba(255, 215, 0, 0.85), 40, 0.35, 0, 0);
 }
 
 .draw-view .draw-panel {
-    -fx-background-color: rgba(0, 0, 0, 0.18);
+    -fx-background-color: -app-panel;
     -fx-background-radius: 18;
     -fx-border-radius: 18;
     -fx-border-width: 2;
-    -fx-border-color: #9c7945;
+    -fx-border-color: -app-border;
     -fx-padding: 8 16 8 16;
 }
 
 .draw-view .draw-winner {
     -fx-font-size: 46px;
-    -fx-text-fill: #00ffea;
+    -fx-text-fill: -app-accent;
 }
 
 .draw-view .draw-winners-list {
     -fx-font-size: 22px;
-    -fx-text-fill: #d6c3a0;
+    -fx-text-fill: -app-text-muted;
 }
 
 .draw-view .draw-option-label {
     -fx-font-size: 20px;
-    -fx-text-fill: #d6c3a0;
-}
-
-.draw-view .check-box {
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #d6c3a0;
-}
-
-.draw-view .check-box .box {
-    -fx-background-color: #2c3e50;
-    -fx-border-color: #9c7945;
-}
-
-.draw-view .check-box:selected .mark {
-    -fx-background-color: #00ffea;
+    -fx-text-fill: -app-text-muted;
 }
 
 .draw-view .spinner .text-field {
@@ -236,6 +266,7 @@
     /* the one button that runs the draw */
     -fx-font-size: 24px;
     -fx-background-color: linear-gradient(#f3d57a, #9c7945);
+    -fx-text-fill: #1d2733;
     -fx-min-width: 200px;
     -fx-pref-height: 56px;
 }
@@ -244,214 +275,75 @@
     -fx-background-color: linear-gradient(#ffe38f, #b38a4e);
 }
 
-.draw-view .button:disabled {
-    -fx-opacity: 0.45;
-}
-
-.player-status {
-    /* style the player status view */
-    -fx-background-color: #34495e;
-    -fx-text-fill: #9c7945;
-}
+/* player status screen */
 
 .player-status .text-field {
-    /* style the text fields in the player status view */
-    -fx-font-size: 50px;
+    -fx-font-size: 40px;
     -fx-font-weight: bold;
+    -fx-background-radius: 15;
     -fx-border-radius: 15;
-    -fx-border-width: 2;
-    -fx-border-color: #9c7945;
-    -fx-text-fill: #00ffea;
-}
-
-.player-status .button {
-    /* style the buttons in the player status view */
-    -fx-background-color: #3498db;
-    -fx-background-radius: 10;
-    -fx-text-fill: black;
-    -fx-border-width: 2;
-    -fx-border-radius: 10;
-    -fx-border-color: #9c7945;
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
-}
-
-.player-status .button:hover {
-    /* style the buttons in the draw view when hovered */
-    -fx-background-color: #2980b9;
+    -fx-text-fill: -app-accent;
 }
 
 .player-status #text-area {
-    /* style the text area in the player status view */
-    -fx-font-size: 30px;
+    -fx-font-size: 28px;
     -fx-font-weight: bold;
-    -fx-border-width: 2;
-    -fx-border-color: #9c7945;
-    -fx-text-fill: black;
     -fx-background-radius: 10;
-    -fx-background-color: #9c7945;
+    -fx-border-radius: 10;
+    -fx-border-width: 2;
+    -fx-border-color: -app-border;
     -fx-wrap-text: true;
-    -fx-alignment: center;
 }
 
-.add-item {
-    /* style the add item view */
-    -fx-background-color: #34495e;
+.player-status #text-area .content {
+    -fx-background-color: -app-surface;
+    -fx-background-radius: 8;
 }
+
+/* add item screen */
 
 .add-item .text-field {
-    /* style the text fields in the add item view */
-    -fx-font-size: 20px;
-    -fx-font-weight: bold;
-    -fx-border-radius: 10;
-    -fx-border-width: 2;
-    -fx-background-radius: 10;
-    -fx-border-color: #9c7945;
-    -fx-text-fill: black;
-}
-
-.add-item .button {
-    /* style the buttons in the add item view */
-    -fx-background-color: #3498db;
-    -fx-background-radius: 10;
-    -fx-text-fill: black;
-    -fx-border-width: 2;
-    -fx-border-radius: 10;
-    -fx-border-color: #9c7945;
-    -fx-font-size: 22px;
     -fx-font-weight: bold;
 }
 
-.add-item .button:hover {
-    /* style the buttons in the add item view when hovered */
-    -fx-background-color: #2980b9;
-}
-
-.add-item .label {
-    /* style the labels in the add item view */
-    -fx-font-size: 30px;
-    -fx-font-weight: bold;
-    -fx-border-radius: 10;
-    -fx-border-width: 2;
-    -fx-border-color: #9c7945;
-    -fx-text-fill: #22ff00;
-}
-
-.add-player{
-    /* style the add player view */
-    -fx-background-color: #34495e;
-}
+/* ticket sale screen */
 
 .add-player .text-field {
-    /* style the text fields in the add player view */
-    -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-border-radius: 10;
-    -fx-border-width: 2;
-    -fx-background-radius: 10;
-    -fx-border-color: #9c7945;
-    -fx-text-fill: black;
-}
-
-.add-player .button {
-    /* style the buttons in the add player view */
-    -fx-background-color: #3498db;
-    -fx-background-radius: 10;
-    -fx-text-fill: black;
-    -fx-border-width: 2;
-    -fx-border-radius: 10;
-    -fx-border-color: #9c7945;
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
-}
-
-.add-player .button:hover {
-    /* style the buttons in the add player view when hovered */
-    -fx-background-color: #2980b9;
-}
-
-#ID {
-    /* style the label ID in the add player view when hovered */
 }
 
 .add-player #ID {
-    /* style the labels in the add player view */
+    /* tickets left */
     -fx-font-size: 30px;
     -fx-font-weight: bold;
     -fx-border-radius: 10;
     -fx-border-width: 2;
-    -fx-border-color: #9c7945;
-    -fx-text-fill: #22ff00;
-
-}
-
-.view-item {
-    /* style the view item view */
-    -fx-background-color: #34495e;
-}
-
-.view-item .button {
-    /* style the buttons in the view item view */
-    -fx-background-color: #3498db;
-    -fx-background-radius: 10;
-    -fx-text-fill: black;
-    -fx-border-width: 2;
-    -fx-border-radius: 10;
-    -fx-border-color: #9c7945;
-    -fx-font-size: 22px;
-}
-
-.view-item .button:hover {
-    /* style the buttons in the view item view when hovered */
-    -fx-background-color: #2980b9;
-}
-.view-item .label {
-    /* style the labels in the view item view */
-    -fx-font-size: 30px;
-    -fx-font-weight: bold;
-    -fx-border-radius: 10;
-    -fx-border-width: 2;
-    -fx-border-color: #9c7945;
-    -fx-text-fill: #00ffea;
+    -fx-border-color: -app-border;
+    -fx-text-fill: -app-ok;
 }
 
 .add-player .sale-title {
-    /* item name and price above the ticket list */
     -fx-font-size: 26px;
-    -fx-text-fill: white;
+    -fx-text-fill: -app-text;
 }
 
 .add-player .sale-summary {
-    /* money collected and still owed */
     -fx-font-size: 20px;
-    -fx-text-fill: #d6c3a0;
+    -fx-text-fill: -app-text-muted;
 }
 
 .add-player .sale-total {
-    /* amount to pay for the sale being typed */
     -fx-font-size: 22px;
-    -fx-text-fill: #ffd700;
+    -fx-text-fill: -app-gold;
 }
 
-.add-player .check-box {
-    -fx-font-size: 18px;
+/* item viewer */
+
+.view-item .label {
+    -fx-font-size: 30px;
     -fx-font-weight: bold;
-    -fx-text-fill: #d6c3a0;
-}
-
-.add-player .check-box .box {
-    -fx-background-color: #2c3e50;
-    -fx-border-color: #9c7945;
-}
-
-.add-player .check-box:selected .mark {
-    -fx-background-color: #00ffea;
-}
-
-.table-cell.paid-yes {
-    -fx-text-fill: #1e8e3e;
-}
-
-.table-cell.paid-no {
-    -fx-text-fill: #d35400;
+    -fx-border-radius: 10;
+    -fx-border-width: 2;
+    -fx-border-color: -app-border;
+    -fx-text-fill: -app-accent;
 }

@@ -7,6 +7,7 @@ import javafx.scene.image.ImageView;
 import raffle.models.Item;
 import raffle.utils.AppPaths;
 import raffle.utils.Messages;
+import raffle.ui.Dialogs;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -103,11 +104,7 @@ public class ViewItemController {
    }// end of handleNextImage method
 
    private void showAlert(Alert.AlertType alertType, String title, String message) {
-      Alert alert = new Alert(alertType);
-      alert.setTitle(title);
-      alert.setHeaderText(null);
-      alert.setContentText(message);
-      alert.showAndWait();
+      Dialogs.show(alertType, title, message);
    }// end of showAlert method
 
    // Add a tooltip to a control

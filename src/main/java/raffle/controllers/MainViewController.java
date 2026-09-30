@@ -12,12 +12,14 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import raffle.main.App;
 import raffle.models.Item;
+import raffle.ui.Theme;
 import raffle.utils.AppPaths;
 import raffle.utils.BackupService;
 import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.ItemImages;
 import raffle.utils.Messages;
 import raffle.utils.Money;
+import raffle.ui.Dialogs;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,6 +57,8 @@ public class MainViewController {
    private Button refreshListButton;
    @FXML
    private Button languageButton;
+   @FXML
+   private Button themeButton;
 
    private App app;
    private ObservableList<Item> itemList;
@@ -146,6 +150,8 @@ public class MainViewController {
       addTooltip(viewItemButton, Messages.get("main.tip.view"));
       addTooltip(languageButton, Messages.get("main.tip.language"));
       languageButton.setText(Messages.other().getLanguage().toUpperCase(Locale.ROOT));// shows the language it switches to
+      addTooltip(themeButton, Messages.get("main.tip.theme"));
+      themeButton.setText(Messages.get(Theme.mode() == Theme.Mode.DARK ? "main.btn.themeLight" : "main.btn.themeDark"));// shows the theme it switches to
 
       loadItemsFromCSV();
 
@@ -232,18 +238,7 @@ public class MainViewController {
 
       Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
       if (selectedItem != null) {
-         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-         alert.setTitle(Messages.get("main.delete.title"));
-         alert.setHeaderText(Messages.get("main.delete.header"));
-         alert.setContentText(Messages.get("dialog.chooseOption"));
-
-         ButtonType buttonTypeOne = new ButtonType(Messages.get("dialog.yes"));
-         ButtonType buttonTypeTwo = new ButtonType(Messages.get("dialog.no"));
-
-         alert.getButtonTypes().setAll(buttonTypeOne, buttonTypeTwo);
-
-         Optional<ButtonType> result = alert.showAndWait();
-         if (result.isPresent() && result.get() == buttonTypeOne) {
+         if (Dialogs.confirm(Messages.get("main.delete.title"), Messages.get("main.delete.header"))) {
             try {
                ItemDataReaderAndWriter.writeItemsToCSV(itemList.filtered(item -> item != selectedItem), AppPaths.catalogFile());
                itemList.remove(selectedItem);
@@ -290,6 +285,14 @@ public class MainViewController {
       Messages.switchLanguage();
       app.showMainView();
    }//end of handleToggleLanguage method
+
+   // Switch between the dark and the light theme; the main view is rebuilt, every other screen is built
+   // with the new theme when it is opened.
+   @FXML
+   private void handleToggleTheme() {
+      Theme.toggle();
+      app.showMainView();
+   }//end of handleToggleTheme method
 
    @FXML
    private void handleRefreshList() {
@@ -344,13 +347,7 @@ public class MainViewController {
    }// end of handleViewItem method
 
    private void showAlert(Alert.AlertType alertType, String title, String message) {
-      Platform.runLater(() -> {
-         Alert alert = new Alert(alertType);
-         alert.setTitle(title);
-         alert.setHeaderText(null);
-         alert.setContentText(message);
-         alert.showAndWait();
-      });
+      Dialogs.showLater(alertType, title, message);
    }// end of showAlert method
 
    public void setMainApp(App app) {

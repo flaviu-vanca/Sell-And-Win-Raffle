@@ -55,6 +55,7 @@
     <Button fx:id="drawButton" onAction="#handleDraw" styleClass="button" text="%main.btn.draw" />
     <Button fx:id="refreshListButton" onAction="#handleRefreshList" styleClass="button" text="%main.btn.refresh" />
     <Button fx:id="languageButton" onAction="#handleToggleLanguage" styleClass="button" />
+    <Button fx:id="themeButton" onAction="#handleToggleTheme" styleClass="button" />
     <VBox.margin>
        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
     </VBox.margin>

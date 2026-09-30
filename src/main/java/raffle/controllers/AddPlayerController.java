@@ -17,6 +17,7 @@ import raffle.utils.Messages;
 import raffle.utils.Money;
 import raffle.utils.PhoneNumbers;
 import raffle.utils.PlayerDataReaderAndWriter;
+import raffle.ui.Dialogs;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -467,20 +468,8 @@ public class AddPlayerController {
       ObservableList<Player> selectedPlayers = playerTable.getSelectionModel().getSelectedItems();
       if (! selectedPlayers.isEmpty()) {
 
-         // Show a confirmation dialog
-         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-         alert.setTitle(Messages.get("player.delete.title"));
-         alert.setHeaderText(Messages.get("player.delete.header"));
-         alert.setContentText(Messages.get("dialog.chooseOption"));
-
-         ButtonType buttonTypeOne = new ButtonType(Messages.get("dialog.yes"));
-         ButtonType buttonTypeTwo = new ButtonType(Messages.get("dialog.no"));
-
-         alert.getButtonTypes().setAll(buttonTypeOne, buttonTypeTwo);
-
-         // Process the user's choice
-         Optional<ButtonType> result = alert.showAndWait();
-         if (result.isPresent() && result.get() == buttonTypeOne) {
+         // Ask before deleting
+         if (Dialogs.confirm(Messages.get("player.delete.title"), Messages.get("player.delete.header"))) {
 
             for (Player selectedPlayer : selectedPlayers) {
                int removedID = selectedPlayer.getId();
@@ -615,11 +604,7 @@ public class AddPlayerController {
 
    // Show an alert dialog
    private void showAlert(Alert.AlertType alertType, String title, String message) {
-      Alert alert = new Alert(alertType);
-      alert.setTitle(title);
-      alert.setHeaderText(null);
-      alert.setContentText(message);
-      alert.showAndWait();
+      Dialogs.show(alertType, title, message);
    }// end of showAlert method
 
    // Set the selected item

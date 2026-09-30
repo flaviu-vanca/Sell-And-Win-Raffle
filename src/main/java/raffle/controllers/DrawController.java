@@ -8,6 +8,7 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
@@ -23,6 +24,8 @@ import raffle.services.DrawHistory;
 import raffle.services.DrawSession;
 import raffle.services.RaffleDraw;
 import raffle.ui.ConfettiCanvas;
+import raffle.ui.Dialogs;
+import raffle.ui.Theme;
 import raffle.utils.AppPaths;
 import raffle.utils.Fxml;
 import raffle.utils.ItemImages;
@@ -327,7 +330,9 @@ public class DrawController {
       FXMLLoader loader = Fxml.loader("/fxml_files/player-status-view.fxml");
 
       // Create a new scene with the loaded FXML file
-      Scene scene = new Scene(loader.load());
+      Parent statusRoot = loader.load();
+      Theme.apply(statusRoot);
+      Scene scene = new Scene(statusRoot);
 
       // Create a new stage for the Player Status window
       Stage newStage = new Stage();
@@ -354,13 +359,7 @@ public class DrawController {
 
    // Method to show an alert. Deferred because dialogs cannot be opened while an animation is being processed.
    private void showAlert(Alert.AlertType alertType, String title, String message) {
-      Platform.runLater(() -> {
-         Alert alert = new Alert(alertType);
-         alert.setTitle(title);
-         alert.setHeaderText(null);
-         alert.setContentText(message);
-         alert.showAndWait();
-      });
+      Dialogs.showLater(alertType, title, message);
    }// end of showAlert method
 
    private void showItemSummary() {

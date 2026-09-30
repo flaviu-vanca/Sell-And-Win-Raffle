@@ -7,6 +7,7 @@ import raffle.utils.AppPaths;
 import raffle.utils.Messages;
 import raffle.utils.PhoneNumbers;
 import raffle.utils.PlayerDataReaderAndWriter;
+import raffle.ui.Dialogs;
 
 import java.io.IOException;
 import java.util.List;
@@ -166,11 +167,7 @@ public class PlayerStatusController {
 
    // Method to show an alert
    private void showAlert(Alert.AlertType alertType, String title, String message) {
-      Alert alert = new Alert(alertType);
-      alert.setTitle(title);
-      alert.setHeaderText(null);
-      alert.setContentText(message);
-      alert.showAndWait();
+      Dialogs.show(alertType, title, message);
    }// end of showAlert method
 
 }// end of PlayerStatusController class

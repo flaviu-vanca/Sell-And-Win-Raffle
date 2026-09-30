@@ -12,6 +12,7 @@ import raffle.utils.AppPaths;
 import raffle.utils.ItemDataReaderAndWriter;
 import raffle.utils.PlayerDataReaderAndWriter;
 import raffle.utils.Messages;
+import raffle.ui.Dialogs;
 
 import java.io.File;
 import java.io.IOException;
@@ -236,11 +237,7 @@ public class AddItemController {
 
    // Show an alert dialog
    private void showAlert(Alert.AlertType alertType, String title, String message) {
-      Alert alert = new Alert(alertType);
-      alert.setTitle(title);
-      alert.setHeaderText(null);
-      alert.setContentText(message);
-      alert.showAndWait();
+      Dialogs.show(alertType, title, message);
    }// end of showAlert method
 
    // Clear all the fields

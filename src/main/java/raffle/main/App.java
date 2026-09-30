@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
@@ -16,6 +17,8 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import raffle.controllers.*;
 import raffle.models.Item;
+import raffle.ui.Dialogs;
+import raffle.ui.Theme;
 import raffle.utils.AppPaths;
 import raffle.utils.BackupService;
 import raffle.utils.Fxml;
@@ -34,6 +37,7 @@ public class App extends Application {
       this.primaryStage = primaryStage;
       this.primaryStage.setTitle("Sell & Win Raffle");
       Messages.initFromSettings();
+      Theme.initFromSettings();
 
       // Keep a copy of the data from before this session. A failed backup must never stop the app from starting.
       try {
@@ -94,7 +98,7 @@ public class App extends Application {
       try {
          primaryStage.setFullScreen(false);// the draw screen can be shown full screen
          FXMLLoader loader = Fxml.loader("/fxml_files/main-view.fxml");
-         Scene scene = new Scene(loader.load());
+         Scene scene = sceneOf(loader);
          primaryStage.setScene(scene);
 
          MainViewController mainViewController = loader.getController();
@@ -117,7 +121,7 @@ public class App extends Application {
    public void showDrawView(Item selectedItem) {
       try {
          FXMLLoader loader = Fxml.loader("/fxml_files/draw-view.fxml");
-         Scene scene = new Scene(loader.load());
+         Scene scene = sceneOf(loader);
          primaryStage.setScene(scene);
          primaryStage.setTitle(Messages.get("window.draw"));
 
@@ -146,7 +150,7 @@ public class App extends Application {
    public void showViewItemView(Item selectedItem) {
       try {
          FXMLLoader loader = Fxml.loader("/fxml_files/view-item-view.fxml");
-         Scene scene = new Scene(loader.load());
+         Scene scene = sceneOf(loader);
          primaryStage.setScene(scene);
          primaryStage.setTitle(Messages.get("window.viewItem"));
 
@@ -175,7 +179,7 @@ public class App extends Application {
    public void showAddItemView() {
       try {
          FXMLLoader loader = Fxml.loader("/fxml_files/add-item-view.fxml");
-         Scene scene = new Scene(loader.load());
+         Scene scene = sceneOf(loader);
          primaryStage.setScene(scene);
          primaryStage.setTitle(Messages.get("window.addItem"));
 
@@ -210,7 +214,7 @@ public class App extends Application {
          }
 
          FXMLLoader loader = Fxml.loader("/fxml_files/add-player-view.fxml");
-         Scene scene = new Scene(loader.load());
+         Scene scene = sceneOf(loader);
          primaryStage.setScene(scene);
          primaryStage.setTitle(Messages.get("window.addPlayer"));
 
@@ -237,13 +241,17 @@ public class App extends Application {
       }// end of try-catch block
    }// end of showAddPlayerView method
 
+   // A scene whose root carries the stylesheet and the current theme
+   private static Scene sceneOf(FXMLLoader loader) throws java.io.IOException {
+      Parent root = loader.load();
+      Theme.apply(root);
+      return new Scene(root);
+   }// end of sceneOf method
+
    // Method to show an alert dialog, with an option to close the application based on a flag
    private void showAlert(Alert.AlertType alertType, String title, String message, boolean shouldCloseApp) {
       Platform.runLater(() -> {
-         Alert alert = new Alert(alertType);
-         alert.setTitle(title);
-         alert.setHeaderText(null);
-         alert.setContentText(message);
+         Alert alert = Dialogs.build(alertType, title, null, message);
 
          // Add a custom icon to the alert dialog
          alert.showAndWait().ifPresent(response -> {

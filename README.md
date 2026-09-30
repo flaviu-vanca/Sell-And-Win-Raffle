@@ -36,6 +36,7 @@ Data is stored locally using **CSV files** and item-specific image folders under
 - 🎉 Made to be shown on a projector: full screen (`F11`, `Esc` to leave), the item picture and name, slowing number roll, confetti, keyboard only (`Space`/`Enter`). Phone numbers are never shown on the draw screen
 - 📜 Every draw is saved to a history file (time, item, ticket, winner)
 - 🛟 Crash-safe saves (write to a temp file, then replace) and an automatic backup on every start-up
+- 🎨 Dark and light theme, switched with a button on the main screen and remembered; one stylesheet whose colours are variables, so a new theme is a handful of lines
 - 🌍 English and Romanian: every screen is translated, the language follows the system language at first and can be switched with the `RO`/`EN` button on the main screen (the choice is remembered in `settings.properties`). Texts live in `i18n/messages*.properties`
 - 🧰 Package as a **JAR** and a Windows **.exe** (Launch4j)
 
@@ -112,7 +113,7 @@ At runtime, the application writes data to the user’s home directory:
     <item-title>.csv.bak      (previous version, kept on every save)
   <item-title>/
     image files...
-  settings.properties         (chosen language)
+  settings.properties         (language, theme and currency)
   backups/
     <yyyyMMdd-HHmmss>/        (snapshot of data/ and records/ taken at each start-up, newest 20 kept)
     deleted/                  (ledgers of deleted items are moved here, never destroyed)
@@ -208,6 +209,8 @@ The UI is split into focused JavaFX controllers:
 
 ### UI helpers
 
+- `Theme` — dark/light theme (a style class on the screen root) and its saved setting
+- `Dialogs` — the one place that builds alerts and Yes/No questions, so they follow the theme and the language
 - `ConfettiCanvas` — the confetti overlay of the draw screen
 - `ItemImages` — item picture, or the bundled logo when there is none
 
@@ -280,7 +283,7 @@ The repository contains automated tests for:
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 17 test classes, 76 JUnit tests (`mvn test`). The controllers are not unit tested yet.
+Current test suite: 18 test classes, 81 JUnit tests (`mvn test`). The controllers are not unit tested yet.
 
 ---
 
