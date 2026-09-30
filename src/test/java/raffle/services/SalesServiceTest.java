@@ -47,7 +47,8 @@ class SalesServiceTest {
 
    @Test
    void aSaleIsSavedWithTheBuyersDetailsAndTheTime() throws Exception {
-      List<Integer> ids = service.sell("Bike", "  Ion Popescu ", "0712 345 678", 2, false);
+      SalesService.Sale sale = service.sell("Bike", "  Ion Popescu ", "0712 345 678", 2, false);
+      List<Integer> ids = sale.ticketIds();
 
       assertEquals(2, ids.size());
       List<Player> stored = repository.ledger("Bike");
@@ -57,6 +58,21 @@ class SalesServiceTest {
       assertEquals("0712345678", ticket.getPhoneNumber(), "spaces are removed from the phone number");
       assertFalse(ticket.isPaid());
       assertEquals(NOW.toString(), ticket.getSoldAt());
+      assertEquals(1000, ticket.getPriceCents(), "the ticket remembers the price of the item at the time of the sale");
+      assertEquals(2000, sale.totalCents());
+   }
+
+   @Test
+   void aLaterPriceChangeDoesNotReachBackToTicketsAlreadySold() throws Exception {
+      service.sell("Bike", "Ion", "0712345678", 1, true);
+      repository.updateItem("Bike", "Red", 20.0, repository.ledger("Bike"));
+
+      SalesService.Sale later = service.sell("Bike", "Ana", "0700000000", 1, true);
+
+      assertEquals(2000, later.totalCents());
+      List<Player> stored = repository.ledger("Bike");
+      assertEquals(1000, stored.stream().filter(p -> "Ion".equals(p.getName())).findFirst().orElseThrow().getPriceCents());
+      assertEquals(2000, stored.stream().filter(p -> "Ana".equals(p.getName())).findFirst().orElseThrow().getPriceCents());
    }
 
    @Test
@@ -84,7 +100,7 @@ class SalesServiceTest {
 
    @Test
    void releasedTicketsCanBeSoldAgain() throws Exception {
-      List<Integer> ids = service.sell("Bike", "Ion", "0712345678", 5, true);
+      List<Integer> ids = service.sell("Bike", "Ion", "0712345678", 5, true).ticketIds();
 
       assertEquals(2, service.release("Bike", ids.subList(0, 2)));
 

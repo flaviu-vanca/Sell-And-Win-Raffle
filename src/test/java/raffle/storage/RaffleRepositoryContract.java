@@ -126,8 +126,9 @@ abstract class RaffleRepositoryContract {
    @Test
    void textWithCommasQuotesAndAccentsWorks() throws IOException {
       try (RaffleRepository repository = create(root)) {
-         // the title is also a file name in the CSV layout, so it stays ASCII: the JVM of a POSIX locale cannot name files otherwise
-         String title = "Telefon \"Pro\", 128GB";
+         // the title is also a file name in the CSV layout: no characters a file name cannot have on Windows or
+         // in a POSIX locale (quotes, accents); the comma is what matters for CSV
+         String title = "Telefon Pro, 128GB";
          repository.addItem(new Item("", title, "Descriere, cu virgulă și \"ghilimele\"", 2, 99.5), unsoldTickets(2));
 
          Item stored = repository.items().getFirst();
@@ -210,6 +211,85 @@ abstract class RaffleRepositoryContract {
          assertEquals(1, reopened.items().size());
          assertEquals(2, reopened.ledger("Bike").size());
          assertEquals(1, reopened.draws().size());
+      }
+   }
+
+   @Test
+   void aTicketKeepsThePriceItWasSoldFor() throws IOException {
+      try (RaffleRepository repository = create(root)) {
+         repository.addItem(item("Bike", 2, 10), unsoldTickets(2));
+         List<Player> ledger = new ArrayList<>(repository.ledger("Bike"));
+         ledger.set(0, new Player(1, "Ion", "0712345678", 1, true, "", 1250));
+         repository.saveLedger("Bike", ledger);
+
+         List<Player> stored = repository.ledger("Bike");
+         assertEquals(1250, stored.get(0).getPriceCents());
+         assertEquals(0, stored.get(1).getPriceCents());
+      }
+   }
+
+   @Test
+   void oneItemCanBeLookedUpByTitle() throws IOException {
+      try (RaffleRepository repository = create(root)) {
+         repository.addItem(item("Bike", 2, 10), unsoldTickets(2));
+         repository.addItem(item("Phone", 2, 99.5), unsoldTickets(2));
+
+         assertEquals(99.5, repository.item("Phone").orElseThrow().getPrice());
+         assertTrue(repository.item("Nothing").isEmpty());
+      }
+   }
+
+   @Test
+   void anUpdateChangesTheDescriptionThePriceAndTheTickets() throws IOException {
+      try (RaffleRepository repository = create(root)) {
+         repository.addItem(item("Bike", 2, 10), unsoldTickets(2));
+         List<Player> ledger = new ArrayList<>(repository.ledger("Bike"));
+         ledger.set(0, new Player(1, "Ion", "0712345678", 1, true, "", 1000));
+         ledger.add(new Player(3, "", "", 0));
+         ledger.add(new Player(4, "", "", 0));
+
+         repository.updateItem("Bike", "New description", 12.5, ledger);
+
+         Item bike = repository.items().getFirst();
+         assertEquals("New description", bike.getDescription());
+         assertEquals(12.5, bike.getPrice());
+         assertEquals(3, bike.getTickets());
+         assertEquals(4, repository.ledger("Bike").size());
+         assertEquals("Ion", repository.ledger("Bike").getFirst().getName());
+         assertEquals(1000, repository.ledger("Bike").getFirst().getPriceCents());
+      }
+   }
+
+   @Test
+   void anUpdateKeepsTheTitleAndThePicture() throws IOException {
+      try (RaffleRepository repository = create(root)) {
+         repository.addItem(new Item("/pics/bike.png", "Bike", "Red", 2, 10), unsoldTickets(2));
+
+         repository.updateItem("Bike", "Blue", 11, repository.ledger("Bike"));
+
+         assertEquals("Bike", repository.items().getFirst().getTitle());
+         assertEquals("/pics/bike.png", repository.items().getFirst().getImage());
+      }
+   }
+
+   @Test
+   void soldTicketsWithoutARecordedPriceKeepTheOldPriceWhenThePriceChanges() throws IOException {
+      try (RaffleRepository repository = create(root)) {
+         repository.addItem(item("Bike", 2, 10), unsoldTickets(2));
+         List<Player> ledger = new ArrayList<>(repository.ledger("Bike"));
+         ledger.set(0, new Player(1, "Ion", "0712345678", 1, true, "", 0));// sold, price not recorded
+
+         repository.updateItem("Bike", "Red", 20, ledger);
+
+         assertEquals(1000, repository.ledger("Bike").getFirst().getPriceCents());
+      }
+   }
+
+   @Test
+   void updatingAnUnknownItemFails() throws IOException {
+      try (RaffleRepository repository = create(root)) {
+         org.junit.jupiter.api.Assertions.assertThrows(IOException.class,
+                 () -> repository.updateItem("Nothing", "x", 1, unsoldTickets(1)));
       }
    }
 }

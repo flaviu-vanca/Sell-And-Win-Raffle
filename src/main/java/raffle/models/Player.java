@@ -2,6 +2,7 @@ package raffle.models;
 
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class Player {
@@ -11,6 +12,7 @@ public class Player {
    private final SimpleIntegerProperty numberOfTickets;
    private final SimpleBooleanProperty paid;
    private final SimpleStringProperty soldAt;
+   private final SimpleLongProperty priceCents;
 
    /** A ticket row without payment details: a sold ticket counts as paid, which is what older ledgers meant. */
    public Player(int id, String name, String phoneNumber, int numberOfTickets) {
@@ -22,12 +24,21 @@ public class Player {
     * @param soldAt when the ticket was sold, as an ISO-8601 instant, or empty when unknown
     */
    public Player(int id, String name, String phoneNumber, int numberOfTickets, boolean paid, String soldAt) {
+      this(id, name, phoneNumber, numberOfTickets, paid, soldAt, 0);
+   }
+
+   /**
+    * @param priceCents what the ticket was sold for, in cents; 0 when it is not recorded (unsold tickets, and
+    *                   tickets sold by versions that did not record it), which means "the price of the item"
+    */
+   public Player(int id, String name, String phoneNumber, int numberOfTickets, boolean paid, String soldAt, long priceCents) {
       this.id = new SimpleIntegerProperty(id);
       this.name = new SimpleStringProperty(name);
       this.phoneNumber = new SimpleStringProperty(phoneNumber);
       this.numberOfTickets = new SimpleIntegerProperty(numberOfTickets);
       this.paid = new SimpleBooleanProperty(paid);
       this.soldAt = new SimpleStringProperty(soldAt == null ? "" : soldAt);
+      this.priceCents = new SimpleLongProperty(priceCents);
    }
 
    public int getId() {
@@ -78,6 +89,14 @@ public class Player {
       return soldAt;
    }
 
+   public long getPriceCents() {
+      return priceCents.get();
+   }
+
+   public SimpleLongProperty priceCentsProperty() {
+      return priceCents;
+   }
+
    /** A ticket row is sold when a buyer name is set; unsold rows are kept in the ledger with empty fields. */
    public boolean isSold() {
       String buyer = name.get();
@@ -108,6 +127,10 @@ public class Player {
       this.paid.set(paid);
    }
 
+   public void setPriceCents(long priceCents) {
+      this.priceCents.set(priceCents);
+   }
+
    public void setSoldAt(String soldAt) {
       this.soldAt.set(soldAt == null ? "" : soldAt);
    }
@@ -119,5 +142,6 @@ public class Player {
       setNumberOfTickets(0);
       setPaid(false);
       setSoldAt("");
+      setPriceCents(0);
    }
 }

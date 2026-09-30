@@ -120,7 +120,7 @@ public final class SqliteRaffleRepository implements RaffleRepository {
                id = keys.getLong(1);
             }// end of try-with-resources
          }// end of try-with-resources
-         insertTickets(id, tickets);
+         insertTickets(id, tickets, Math.round(item.getPrice() * 100));
          return null;
       });
    }// end of addItem method
@@ -169,14 +169,30 @@ public final class SqliteRaffleRepository implements RaffleRepository {
          if (id == null) {
             throw new IOException("There is no item named " + title);
          }// end of if block
-         try (PreparedStatement delete = connection.prepareStatement("DELETE FROM tickets WHERE item_id = ?")) {
-            delete.setLong(1, id);
-            delete.executeUpdate();
-         }// end of try-with-resources
-         insertTickets(id, ledger);
+         long priceCents = priceCents(id);
+         replaceTickets(id, ledger, priceCents);
          return null;
       });
    }// end of saveLedger method
+
+   @Override
+   public void updateItem(String title, String description, double price, List<Player> ledger) throws IOException {
+      inTransaction(() -> {
+         Long id = itemId(title);
+         if (id == null) {
+            throw new IOException("There is no item named " + title);
+         }// end of if block
+         long oldPriceCents = priceCents(id);// sold tickets with no recorded price were sold at this price
+         try (PreparedStatement update = connection.prepareStatement("UPDATE items SET description = ?, price = ? WHERE id = ?")) {
+            update.setString(1, description);
+            update.setDouble(2, price);
+            update.setLong(3, id);
+            update.executeUpdate();
+         }// end of try-with-resources
+         replaceTickets(id, ledger, oldPriceCents);
+         return null;
+      });
+   }// end of updateItem method
 
    @Override
    public void recordDraw(String itemTitle, Player winner, Instant time) throws IOException {
@@ -219,9 +235,27 @@ public final class SqliteRaffleRepository implements RaffleRepository {
       }// end of try-with-resources
    }// end of itemId method
 
-   private void insertTickets(long itemId, List<Player> tickets) throws SQLException {
+   private long priceCents(long itemId) throws SQLException {
+      try (PreparedStatement select = connection.prepareStatement("SELECT price FROM items WHERE id = ?")) {
+         select.setLong(1, itemId);
+         try (ResultSet result = select.executeQuery()) {
+            return result.next() ? Math.round(result.getDouble(1) * 100) : 0;
+         }// end of try-with-resources
+      }// end of try-with-resources
+   }// end of priceCents method
+
+   private void replaceTickets(long itemId, List<Player> tickets, long fallbackPriceCents) throws SQLException {
+      try (PreparedStatement delete = connection.prepareStatement("DELETE FROM tickets WHERE item_id = ?")) {
+         delete.setLong(1, itemId);
+         delete.executeUpdate();
+      }// end of try-with-resources
+      insertTickets(itemId, tickets, fallbackPriceCents);
+   }// end of replaceTickets method
+
+   // A sold ticket always has a price in the database: one with none recorded gets the fallback
+   private void insertTickets(long itemId, List<Player> tickets, long fallbackPriceCents) throws SQLException {
       try (PreparedStatement insert = connection.prepareStatement(
-              "INSERT INTO tickets (item_id, number, buyer_name, buyer_phone, paid, sold_at) VALUES (?, ?, ?, ?, ?, ?)")) {
+              "INSERT INTO tickets (item_id, number, buyer_name, buyer_phone, paid, sold_at, price_cents) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
          for (Player ticket : tickets) {
             boolean sold = ticket.isSold();// an unsold ticket has no buyer details, whatever is left in the row
             insert.setLong(1, itemId);
@@ -230,6 +264,7 @@ public final class SqliteRaffleRepository implements RaffleRepository {
             insert.setString(4, sold ? ticket.getPhoneNumber() : "");
             insert.setInt(5, sold && ticket.isPaid() ? 1 : 0);
             insert.setString(6, sold ? ticket.getSoldAt() : "");
+            insert.setLong(7, sold ? (ticket.getPriceCents() > 0 ? ticket.getPriceCents() : fallbackPriceCents) : 0);
             insert.addBatch();
          }// end of for loop
          insert.executeBatch();
@@ -240,12 +275,12 @@ public final class SqliteRaffleRepository implements RaffleRepository {
    private List<Player> readLedger(long itemId) throws SQLException {
       List<Player> ledger = new ArrayList<>();
       try (PreparedStatement select = connection.prepareStatement(
-              "SELECT number, buyer_name, buyer_phone, paid, sold_at FROM tickets WHERE item_id = ? ORDER BY number")) {
+              "SELECT number, buyer_name, buyer_phone, paid, sold_at, price_cents FROM tickets WHERE item_id = ? ORDER BY number")) {
          select.setLong(1, itemId);
          try (ResultSet result = select.executeQuery()) {
             while (result.next()) {
                ledger.add(new Player(result.getInt(1), result.getString(2), result.getString(3), 0,
-                                     result.getInt(4) != 0, result.getString(5)));
+                                     result.getInt(4) != 0, result.getString(5), result.getLong(6)));
             }// end of while loop
          }// end of try-with-resources
       }// end of try-with-resources

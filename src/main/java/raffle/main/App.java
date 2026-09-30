@@ -117,6 +117,7 @@ public class App extends Application {
    public void showMainView() {
       try {
          primaryStage.setFullScreen(false);// the draw screen can be shown full screen
+         primaryStage.setTitle("Sell & Win Raffle");
          FXMLLoader loader = Fxml.loader("/fxml_files/main-view.fxml");
          Scene scene = sceneOf(loader);
          primaryStage.setScene(scene);
@@ -153,7 +154,6 @@ public class App extends Application {
             event.consume(); // This line prevents the window from closing
             try {
                showMainView();
-               primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
                e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadDraw"), true);
@@ -184,7 +184,6 @@ public class App extends Application {
             event.consume(); // This line prevents the window from closing
             try {
                showMainView();
-               primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
                e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadItem"), true);
@@ -215,7 +214,6 @@ public class App extends Application {
             event.consume(); // This line prevents the window from closing
             try {
                showMainView();
-               primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
                e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadAddItem"), true);
@@ -228,6 +226,37 @@ public class App extends Application {
          showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
       }// end of try-catch block
    }// end of showAddItemView method
+
+   // Method to show the Edit Item View
+   public void showEditItemView(Item selectedItem) {
+      try {
+         FXMLLoader loader = Fxml.loader("/fxml_files/edit-item-view.fxml");
+         Scene scene = sceneOf(loader);
+         primaryStage.setScene(scene);
+         primaryStage.setTitle(Messages.get("window.editItem"));
+
+         EditItemController controller = loader.getController();
+         controller.setMainApp(this);
+         controller.setItem(selectedItem);
+
+         primaryStage.setOnCloseRequest(event -> {
+            event.consume(); // This line prevents the window from closing
+            try {
+               showMainView();
+            } catch (Exception e) {
+               e.printStackTrace();// the dialog below says what failed, the stack trace says why
+               showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadEditItem"), true);
+            }
+         });// end of setOnCloseRequest method
+
+         primaryStage.setMinWidth(900);
+         primaryStage.setMinHeight(800);
+         primaryStage.show();
+      } catch (Exception e) {
+         e.printStackTrace();// the dialog below says what failed, the stack trace says why
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.unexpected"), true);
+      }// end of try-catch block
+   }// end of showEditItemView method
 
    public void showAddPlayerView(Item selectedItem) {
       try {
@@ -244,7 +273,6 @@ public class App extends Application {
             event.consume(); // This line prevents the window from closing
             try {
                showMainView();
-               primaryStage.setTitle("Sell & Win Raffle");
             } catch (Exception e) {
                e.printStackTrace();// the dialog below says what failed, the stack trace says why
                showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("app.err.loadAddPlayer"), true);

@@ -5,6 +5,7 @@ import raffle.models.Player;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,14 +29,14 @@ public final class TicketSales {
    }// end of availableIds method
 
    /**
-    * Sells randomly chosen unsold tickets to a buyer. A buyer who already holds tickets (same name, ignoring case,
+    * Sells randomly chosen unsold tickets to a buyer, each for {@code priceCents}. A buyer who already holds tickets (same name, ignoring case,
     * and same phone number) gets the new ones added to them.
     *
     * @return the numbers of the tickets sold, in the order they were picked
     * @throws ValidationException when fewer tickets are left than were asked for
     */
    public static List<Integer> sell(List<Player> ledger, String name, String phone, int tickets, boolean paid,
-                                    Instant soldAt, Random random) throws ValidationException {
+                                    Instant soldAt, long priceCents, Random random) throws ValidationException {
       List<Player> available = new ArrayList<>(ledger.stream().filter(ticket -> ! ticket.isSold()).toList());
       if (tickets > available.size()) {
          throw new ValidationException("player.notEnough");
@@ -48,6 +49,7 @@ public final class TicketSales {
          ticket.setPhoneNumber(phone);
          ticket.setPaid(paid);
          ticket.setSoldAt(soldAt.toString());
+         ticket.setPriceCents(priceCents);
          sold.add(ticket.getId());
       }// end of for loop
 
@@ -74,6 +76,40 @@ public final class TicketSales {
       }// end of if block
       return released;
    }// end of release method
+
+   /** Sold tickets with no recorded price get this one. Done before the price of an item changes, so it does not reach back. */
+   public static void freezePrices(List<Player> ledger, long priceCents) {
+      for (Player ticket : ledger) {
+         if (ticket.isSold() && ticket.getPriceCents() <= 0) {
+            ticket.setPriceCents(priceCents);
+         }// end of if block
+      }// end of for loop
+   }// end of freezePrices method
+
+   /** The number of the highest sold ticket, 0 when nothing is sold. */
+   public static int highestSoldId(List<Player> ledger) {
+      return ledger.stream().filter(Player::isSold).mapToInt(Player::getId).max().orElse(0);
+   }// end of highestSoldId method
+
+   /**
+    * The ledger with tickets numbered 1 to {@code total}: tickets that exist are kept as they are, new numbers
+    * are unsold tickets, and tickets above the total are dropped.
+    *
+    * @throws ValidationException when a ticket that would be dropped is already sold
+    */
+   public static List<Player> resized(List<Player> ledger, int total) throws ValidationException {
+      int highestSold = highestSoldId(ledger);
+      if (highestSold > total) {
+         throw new ValidationException("edit.ticketsSold", String.valueOf(highestSold));
+      }// end of if block
+      Map<Integer, Player> byNumber = new HashMap<>();
+      ledger.forEach(ticket -> byNumber.put(ticket.getId(), ticket));
+      List<Player> resized = new ArrayList<>(total);
+      for (int number = 1; number <= total; number++) {
+         resized.add(byNumber.getOrDefault(number, new Player(number, "", "", 0)));
+      }// end of for loop
+      return resized;
+   }// end of resized method
 
    // Every row of a buyer shows the buyer's total; unsold rows show none
    private static void refreshCounts(List<Player> ledger) {

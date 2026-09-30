@@ -29,4 +29,15 @@ class PlayerTest {
       assertFalse(player.isSold());
       assertEquals(3, player.getId());
    }
+
+   @Test
+   void clearingATicketAlsoForgetsWhatItWasSoldFor() {
+      Player player = new Player(3, "Ana", "0700000001", 1, true, "2026-09-30T18:00:00Z", 1250);
+      assertEquals(1250, player.getPriceCents());
+
+      player.clear();
+
+      assertEquals(0, player.getPriceCents());
+      assertFalse(player.isSold());
+   }
 }

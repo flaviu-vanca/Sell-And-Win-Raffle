@@ -178,4 +178,73 @@ class ItemServiceTest {
 
       assertEquals(picture.toAbsolutePath().toString(), repository.items().getFirst().getImage());
    }
+
+   private String updateReason(String title, String description, int tickets, double price) {
+      return assertThrows(ValidationException.class, () -> service.update(title, description, tickets, price)).messageKey();
+   }
+
+   @Test
+   void anItemCanBeEdited() throws Exception {
+      service.create("Bike", "Red", 4, 10, null);
+
+      service.update("Bike", "  Blue  ", 6, 12.5);
+
+      Item bike = repository.items().getFirst();
+      assertEquals("Blue", bike.getDescription());
+      assertEquals(12.5, bike.getPrice());
+      assertEquals(6, repository.ledger("Bike").size());
+      assertEquals(6, bike.getTickets());
+   }
+
+   @Test
+   void editingThePriceDoesNotChangeWhatSoldTicketsWentFor() throws Exception {
+      service.create("Bike", "Red", 4, 10, null);
+      new SalesService(repository).sell("Bike", "Ion", "0712345678", 2, true);
+
+      service.update("Bike", "Red", 4, 20);
+      new SalesService(repository).sell("Bike", "Ana", "0700000000", 1, false);
+
+      ItemSales sales = service.overview().getFirst().sales();
+      assertEquals(20.0, sales.collected(), "two tickets sold at 10.00");
+      assertEquals(20.0, sales.outstanding(), "one ticket sold at 20.00 and not paid yet");
+      assertEquals(20.0 + 20.0 + 20.0, sales.potential(), "sold ones as sold, the one unsold ticket at 20.00");
+   }
+
+   @Test
+   void theTotalOfTicketsCanGrowAndShrinkWhileTheEndIsUnsold() throws Exception {
+      service.create("Bike", "Red", 5, 10, null);
+      new SalesService(repository, new java.util.Random(1), java.time.Clock.systemUTC()).sell("Bike", "Ion", "0712345678", 1, true);
+      int highestSold = TicketSales.highestSoldId(repository.ledger("Bike"));
+
+      service.update("Bike", "Red", highestSold, 10);
+      assertEquals(highestSold, repository.ledger("Bike").size());
+
+      service.update("Bike", "Red", 8, 10);
+      assertEquals(8, repository.ledger("Bike").size());
+      assertEquals(7, TicketSales.availableIds(repository.ledger("Bike")).size());
+   }
+
+   @Test
+   void theTotalCannotDropBelowASoldTicket() throws Exception {
+      service.create("Bike", "Red", 5, 10, null);
+      new SalesService(repository).sell("Bike", "Ion", "0712345678", 5, true);
+
+      assertEquals("edit.ticketsSold", updateReason("Bike", "Red", 4, 10));
+      assertEquals(5, repository.ledger("Bike").size());
+   }
+
+   @Test
+   void badEditsAreRefusedWithTheReason() throws Exception {
+      service.create("Bike", "Red", 5, 10, null);
+
+      assertEquals("val.descriptionEmpty", updateReason("Bike", " ", 5, 10));
+      assertEquals("val.ticketsPositiveInt", updateReason("Bike", "Red", 0, 10));
+      assertEquals("val.pricePositive", updateReason("Bike", "Red", 5, 0));
+      assertEquals("val.pricePositive", updateReason("Bike", "Red", 5, Double.NaN));
+   }
+
+   @Test
+   void editingAnItemThatDoesNotExistFails() {
+      assertThrows(IOException.class, () -> service.update("Nothing", "x", 1, 1));
+   }
 }

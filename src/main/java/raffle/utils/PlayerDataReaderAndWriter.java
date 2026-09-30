@@ -3,6 +3,8 @@ package raffle.utils;
 import raffle.models.Player;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -11,7 +13,7 @@ import java.util.List;
 
 public class PlayerDataReaderAndWriter {
 
-   static final String HEADER = "ID,Name,Phone Number,Number of Tickets,Paid,Sold At";
+   static final String HEADER = "ID,Name,Phone Number,Number of Tickets,Paid,Sold At,Price";
 
    public static List<Player> readPlayersFromFile(Path filePath) throws IOException {
       List<Player> players = new ArrayList<>();
@@ -35,7 +37,11 @@ public class PlayerDataReaderAndWriter {
             boolean paid = fields.length >= 5 && ! fields[4].isBlank() ? Boolean.parseBoolean(fields[4].trim()) : sold;
             String soldAt = fields.length >= 6 ? fields[5].trim() : "";
 
-            players.add(new Player(id, name, phoneNumber, numberOfTickets, paid, soldAt));
+            // What the ticket was sold for; older ledgers have no such column, which means "the item's price"
+            long priceCents = fields.length >= 7 && ! fields[6].isBlank()
+                              ? new BigDecimal(fields[6].trim()).movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValueExact() : 0;
+
+            players.add(new Player(id, name, phoneNumber, numberOfTickets, paid, soldAt, priceCents));
          }// end of if statement
       }// end of for loop
       return players;
@@ -52,7 +58,9 @@ public class PlayerDataReaderAndWriter {
                                                       CsvUtil.quote(player.getPhoneNumber()),
                                                       String.valueOf(player.getNumberOfTickets()),
                                                       player.isSold() ? String.valueOf(player.isPaid()) : "",
-                                                      player.getSoldAt())));
+                                                      player.getSoldAt(),
+                                                      player.isSold() && player.getPriceCents() > 0
+                                                      ? BigDecimal.valueOf(player.getPriceCents(), 2).toPlainString() : "")));
       SafeFiles.writeLinesAtomically(filePath, lines);
    }// end of writePlayersToCSV method
 

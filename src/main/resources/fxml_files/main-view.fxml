@@ -79,6 +79,7 @@
     </VBox>
   <FlowPane alignment="CENTER" hgap="14.0" vgap="8.0" styleClass="h-box" VBox.vgrow="NEVER">
     <Button fx:id="addItemButton" onAction="#handleAddItem" styleClass="button" text="%main.btn.add" />
+    <Button fx:id="editItemButton" onAction="#handleEditItem" styleClass="button" text="%main.btn.edit" />
     <Button fx:id="deleteItemButton" onAction="#handleDeleteItem" styleClass="button" text="%main.btn.delete" />
     <Button fx:id="viewItemButton" onAction="#handleViewItem" styleClass="button" text="%main.btn.view" />
     <Button fx:id="buyTicketsButton" onAction="#handleBuyTickets" styleClass="button" text="%main.btn.buy" />

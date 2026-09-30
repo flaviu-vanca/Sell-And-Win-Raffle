@@ -130,4 +130,27 @@ class SqliteRaffleRepositoryTest extends RaffleRepositoryContract {
          assertEquals(2, repository.items().getFirst().getTickets());
       }
    }
+
+   @Test
+   void aDatabaseFromTheFirstReleaseIsBroughtUpToDate() throws Exception {
+      Files.createDirectories(db().getParent());
+      try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + db());
+           Statement statement = connection.createStatement()) {
+         SqliteSchema.migrate(connection, 1);// the layout of the first release
+         statement.execute("INSERT INTO items (title, description, image, price, created_at) VALUES ('Bike', 'Red', '', 12.5, 'x')");
+         statement.execute("INSERT INTO tickets (item_id, number, buyer_name, buyer_phone, paid, sold_at) VALUES (1, 1, 'Ion', '0712345678', 1, '')");
+         statement.execute("INSERT INTO tickets (item_id, number) VALUES (1, 2)");
+         assertEquals(1, SqliteSchema.version(connection));
+      }
+
+      try (RaffleRepository repository = create(root)) {
+         List<Player> ledger = repository.ledger("Bike");
+         assertEquals(1250, ledger.get(0).getPriceCents(), "tickets sold so far were sold at the price the item has");
+         assertEquals(0, ledger.get(1).getPriceCents());
+         assertEquals("Ion", ledger.get(0).getName());
+      }
+      try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + db())) {
+         assertEquals(SqliteSchema.currentVersion(), SqliteSchema.version(connection));
+      }
+   }
 }

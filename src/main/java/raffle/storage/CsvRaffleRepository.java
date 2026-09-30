@@ -70,6 +70,24 @@ public final class CsvRaffleRepository implements RaffleRepository {
    }// end of addItem method
 
    @Override
+   public void updateItem(String title, String description, double price, List<Player> ledger) throws IOException {
+      List<Item> items = items();
+      Item item = items.stream().filter(candidate -> candidate.getTitle().equals(title)).findFirst()
+                       .orElseThrow(() -> new IOException("There is no item named " + title));
+
+      // Sold tickets without a recorded price were sold at the old price: pin it before the price changes
+      long oldPriceCents = Math.round(item.getPrice() * 100);
+      ledger.stream().filter(ticket -> ticket.isSold() && ticket.getPriceCents() <= 0).forEach(ticket -> ticket.setPriceCents(oldPriceCents));
+
+      // The ledger first: if the catalog cannot be written afterwards, the old price stays and nothing is misread
+      PlayerDataReaderAndWriter.writePlayersToCSV(ledger, ledgerFile(title));
+      item.setDescription(description);
+      item.setPrice(price);
+      item.setTickets((int) ledger.stream().filter(ticket -> ! ticket.isSold()).count());
+      ItemDataReaderAndWriter.writeItemsToCSV(items, catalogFile());
+   }// end of updateItem method
+
+   @Override
    public void removeItem(String title) throws IOException {
       List<Item> remaining = items().stream().filter(item -> ! item.getTitle().equals(title)).toList();
       ItemDataReaderAndWriter.writeItemsToCSV(remaining, catalogFile());

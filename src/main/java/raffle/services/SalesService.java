@@ -1,5 +1,6 @@
 package raffle.services;
 
+import raffle.models.Item;
 import raffle.models.Player;
 import raffle.storage.RaffleRepository;
 import raffle.utils.PhoneNumbers;
@@ -29,6 +30,10 @@ public final class SalesService {
       this.clock = clock;
    }
 
+   /** What a sale came to: the tickets the buyer got and what they cost together. */
+   public record Sale(List<Integer> ticketIds, long totalCents) {
+   }
+
    public List<Player> ledger(String itemTitle) throws IOException {
       return repository.ledger(itemTitle);
    }// end of ledger method
@@ -36,10 +41,10 @@ public final class SalesService {
    /**
     * Sells tickets to a buyer and saves the ledger.
     *
-    * @return the numbers of the tickets the buyer got
+    * @return the tickets the buyer got, and what they cost at the item's current price
     * @throws ValidationException when the buyer details or the number of tickets are not acceptable
     */
-   public List<Integer> sell(String itemTitle, String name, String phone, int tickets, boolean paid)
+   public Sale sell(String itemTitle, String name, String phone, int tickets, boolean paid)
            throws ValidationException, IOException {
       if (name == null || name.isBlank()) {
          throw new ValidationException("val.nameEmpty");
@@ -54,11 +59,14 @@ public final class SalesService {
          throw new ValidationException("val.ticketsPositive");
       }// end of if block
 
+      Item item = repository.item(itemTitle).orElseThrow(() -> new ValidationException("player.notEnough"));
+      long priceCents = Math.round(item.getPrice() * 100);
+
       List<Player> ledger = repository.ledger(itemTitle);
       List<Integer> sold = TicketSales.sell(ledger, name.trim(), PhoneNumbers.normalize(phone), tickets, paid,
-                                            Instant.now(clock), random);
+                                            Instant.now(clock), priceCents, random);
       repository.saveLedger(itemTitle, ledger);
-      return sold;
+      return new Sale(sold, sold.size() * priceCents);
    }// end of sell method
 
    /**

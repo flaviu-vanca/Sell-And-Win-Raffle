@@ -51,4 +51,27 @@ class ItemSalesTest {
       assertEquals(0, sales.soldFraction());
       assertEquals(0.0, sales.collected());
    }
+
+   @Test
+   void everyTicketCountsAtThePriceItWasSoldFor() {
+      // two tickets were sold at 10.00 (one paid), one at 15.00 (paid); the price is 15.00 now; one ticket is unsold
+      List<Player> ledger = List.of(new Player(1, "Ana", "0700000001", 2, true, "", 1000), new Player(2, "Ana", "0700000001", 2, false, "", 1000),
+                                    new Player(3, "Bob", "0700000002", 1, true, "", 1500), new Player(4, "", "", 0));
+
+      ItemSales sales = ItemSales.of(ledger, 15.0);
+
+      assertEquals(25.0, sales.collected());
+      assertEquals(10.0, sales.outstanding());
+      assertEquals(50.0, sales.potential(), "what was sold for, plus the unsold ticket at the current price");
+   }
+
+   @Test
+   void aSoldTicketWithNoRecordedPriceCountsAtTheItemsPrice() {
+      List<Player> ledger = List.of(new Player(1, "Ana", "0700000001", 1, true, ""), new Player(2, "Bob", "0700000002", 1, false, ""));
+
+      ItemSales sales = ItemSales.of(ledger, 12.0);
+
+      assertEquals(12.0, sales.collected());
+      assertEquals(12.0, sales.outstanding());
+   }
 }

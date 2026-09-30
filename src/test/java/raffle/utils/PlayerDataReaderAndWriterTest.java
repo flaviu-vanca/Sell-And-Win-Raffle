@@ -87,7 +87,7 @@ class PlayerDataReaderAndWriterTest {
       PlayerDataReaderAndWriter.writePlayersToCSV(List.of(new Player(1, "", "", 0)), file);
 
       assertEquals(PlayerDataReaderAndWriter.HEADER, Files.readAllLines(file).getFirst());
-      assertEquals("1,\"\",\"\",0,,", Files.readAllLines(file).get(1));
+      assertEquals("1,\"\",\"\",0,,,", Files.readAllLines(file).get(1));
    }
 
    @Test
@@ -101,5 +101,29 @@ class PlayerDataReaderAndWriterTest {
 
       assertTrue(read.get(1).isPaid(), "old ledgers had no payment tracking, so nothing is shown as owed");
       assertEquals("", read.get(1).getSoldAt());
+   }
+
+   @Test
+   void thePriceATicketWasSoldForSurvivesARoundTrip() throws IOException {
+      Path file = dir.resolve("Bike.csv");
+      PlayerDataReaderAndWriter.writePlayersToCSV(List.of(new Player(1, "", "", 0),
+                                                          new Player(2, "Ana", "0700000001", 1, true, "", 1250),
+                                                          new Player(3, "Bob", "0700000002", 1, false, "", 5)), file);
+
+      List<Player> read = PlayerDataReaderAndWriter.readPlayersFromFile(file);
+
+      assertEquals(0, read.get(0).getPriceCents());
+      assertEquals(1250, read.get(1).getPriceCents());
+      assertEquals(5, read.get(2).getPriceCents());
+      assertTrue(Files.readAllLines(file).get(2).endsWith(",12.50"), Files.readAllLines(file).get(2));
+   }
+
+   @Test
+   void aLedgerWithoutTheColumnHasNoRecordedPrices() throws IOException {
+      Path file = dir.resolve("before-prices.csv");
+      Files.write(file, List.of("ID,Name,Phone Number,Number of Tickets,Paid,Sold At",
+                                "1,\"Ana\",\"0700000001\",1,true,2026-09-30T18:00:00Z"));
+
+      assertEquals(0, PlayerDataReaderAndWriter.readPlayersFromFile(file).getFirst().getPriceCents());
    }
 }

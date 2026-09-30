@@ -43,7 +43,14 @@ final class SqliteSchema {
                       ticket_number INTEGER NOT NULL,
                       winner_name   TEXT NOT NULL,
                       winner_phone  TEXT NOT NULL
-                   )"""));
+                   )"""),
+           // 2: what every ticket was sold for, so that a later price change does not reach back. Tickets sold
+           // so far were sold at the price the item has now.
+           List.of("ALTER TABLE tickets ADD COLUMN price_cents INTEGER NOT NULL DEFAULT 0",
+                   """
+                   UPDATE tickets SET price_cents =
+                      CAST(ROUND((SELECT price FROM items WHERE items.id = tickets.item_id) * 100) AS INTEGER)
+                   WHERE buyer_name <> ''"""));
 
    private SqliteSchema() {
    }
@@ -54,13 +61,18 @@ final class SqliteSchema {
    }// end of currentVersion method
 
    static void migrate(Connection connection) throws SQLException {
+      migrate(connection, STEPS.size());
+   }// end of migrate method
+
+   /** Brings the database up to the given version (tests use this to build the database of an older release). */
+   static void migrate(Connection connection, int target) throws SQLException {
       int version = version(connection);
       if (version > STEPS.size()) {
          throw new SQLException("This data was saved by a newer version of the application (layout " + version
                                 + ", this version knows up to " + STEPS.size() + "). Update the application.");
       }// end of if block
 
-      for (int step = version; step < STEPS.size(); step++) {
+      for (int step = version; step < target; step++) {
          connection.setAutoCommit(false);
          try (Statement statement = connection.createStatement()) {
             for (String sql : STEPS.get(step)) {

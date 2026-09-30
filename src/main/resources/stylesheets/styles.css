@@ -193,6 +193,7 @@
 .root.main-view,
 .root.draw-view,
 .root.add-item,
+.root.edit-item,
 .root.add-player,
 .root.view-item,
 .root.player-status {
@@ -310,6 +311,28 @@
 
 .add-item .text-field {
     -fx-font-weight: bold;
+}
+
+/* edit item screen */
+
+.edit-item .text-field {
+    -fx-font-weight: bold;
+}
+
+.edit-item .edit-title {
+    -fx-font-size: 34px;
+    -fx-text-fill: -app-accent;
+}
+
+.edit-item .edit-label {
+    -fx-font-size: 16px;
+    -fx-text-fill: -app-text-muted;
+}
+
+.edit-item .edit-hint {
+    -fx-font-size: 16px;
+    -fx-font-weight: normal;
+    -fx-text-fill: -app-text-muted;
 }
 
 /* ticket sale screen */

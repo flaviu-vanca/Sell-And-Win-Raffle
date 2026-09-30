@@ -43,6 +43,10 @@ public class Item {
       return description.get();
    }
 
+   public void setDescription(String description) {
+      this.description.set(description);
+   }
+
    public int getTickets() {
       return tickets.get();
    }
@@ -61,6 +65,10 @@ public class Item {
 
    public SimpleDoubleProperty priceProperty() {
       return price;
+   }
+
+   public void setPrice(double price) {
+      this.price.set(price);
    }
 
 }// end of Item class

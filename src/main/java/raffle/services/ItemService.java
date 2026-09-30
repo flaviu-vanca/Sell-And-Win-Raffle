@@ -91,6 +91,30 @@ public final class ItemService {
       }// end of try-catch block
    }// end of create method
 
+   /**
+    * Changes what can change about an item: its description, its price and its number of tickets. Tickets that
+    * were sold keep the price they were sold at. More tickets add unsold ones at the end; fewer tickets drop the
+    * last ones, which is only possible while they are unsold.
+    *
+    * @throws ValidationException when something is not acceptable, or tickets that are already sold would be dropped
+    */
+   public void update(String title, String description, int totalTickets, double price) throws ValidationException, IOException {
+      if (description == null || description.isBlank()) {
+         throw new ValidationException("val.descriptionEmpty");
+      }// end of if block
+      if (totalTickets <= 0) {
+         throw new ValidationException("val.ticketsPositiveInt");
+      }// end of if block
+      if (! (price > 0) || Double.isInfinite(price)) {
+         throw new ValidationException("val.pricePositive");
+      }// end of if block
+
+      Item item = repository.item(title).orElseThrow(() -> new IOException("There is no item named " + title));
+      List<Player> ledger = repository.ledger(title);
+      TicketSales.freezePrices(ledger, Math.round(item.getPrice() * 100));
+      repository.updateItem(title, description.trim(), price, TicketSales.resized(ledger, totalTickets));
+   }// end of update method
+
    /** Removes an item. Its ticket ledger is kept in the backups; its pictures are deleted. */
    public void delete(String title) throws IOException {
       repository.removeItem(title);

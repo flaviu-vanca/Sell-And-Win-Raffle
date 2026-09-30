@@ -33,6 +33,11 @@ public class DelegatingRepository implements RaffleRepository {
    }
 
    @Override
+   public void updateItem(String title, String description, double price, List<Player> ledger) throws IOException {
+      real.updateItem(title, description, price, ledger);
+   }
+
+   @Override
    public void removeItem(String title) throws IOException {
       real.removeItem(title);
    }

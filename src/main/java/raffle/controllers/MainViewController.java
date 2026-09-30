@@ -62,6 +62,8 @@ public class MainViewController {
    @FXML
    private Button addItemButton;
    @FXML
+   private Button editItemButton;
+   @FXML
    private Button deleteItemButton;
    @FXML
    private Button drawButton;
@@ -210,6 +212,7 @@ public class MainViewController {
 
       // Add tooltips to the buttons
       addTooltip(addItemButton, Messages.get("main.tip.add"));
+      addTooltip(editItemButton, Messages.get("main.tip.edit"));
       addTooltip(deleteItemButton, Messages.get("main.tip.delete"));
       addTooltip(drawButton, Messages.get("main.tip.draw"));
       addTooltip(refreshListButton, Messages.get("main.tip.refresh"));
@@ -309,6 +312,22 @@ public class MainViewController {
    private void handleAddItem() {
       app.showAddItemView();
    }// end of handleAddItem method
+
+   // Handle the Edit Item button
+   @FXML
+   private void handleEditItem() {
+      if (itemList == null || itemList.isEmpty()) {
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.initNeeded"), Messages.get("main.initNeeded"));
+         return;
+      }//end of if block
+
+      Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
+      if (selectedItem == null) {
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.noSelection"), Messages.get("main.selectToEdit"));
+         return;
+      }//end of if block
+      app.showEditItemView(selectedItem);
+   }//end of handleEditItem method
 
    // Handle the Delete Item button
    @FXML

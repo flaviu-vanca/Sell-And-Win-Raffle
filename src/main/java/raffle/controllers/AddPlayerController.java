@@ -41,6 +41,8 @@ public class AddPlayerController {
    @FXML
    private TableColumn<Player, Integer> numberOfTicketsColumn;
    @FXML
+   private TableColumn<Player, Long> priceColumn;
+   @FXML
    private TableColumn<Player, Boolean> paidColumn;
    @FXML
    private TableColumn<Player, String> soldAtColumn;
@@ -103,8 +105,24 @@ public class AddPlayerController {
       nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
       phoneNumberColumn.setCellValueFactory(cellData -> cellData.getValue().phoneNumberProperty());
       numberOfTicketsColumn.setCellValueFactory(cellData -> cellData.getValue().numberOfTicketsProperty().asObject());
+      priceColumn.setCellValueFactory(cellData -> cellData.getValue().priceCentsProperty().asObject());
       paidColumn.setCellValueFactory(cellData -> cellData.getValue().paidProperty());
       soldAtColumn.setCellValueFactory(cellData -> cellData.getValue().soldAtProperty());
+
+      // What the ticket was sold for (a ledger from before prices were recorded shows the item's price)
+      priceColumn.setCellFactory(tc -> new TableCell<>() {
+         @Override
+         protected void updateItem(Long cents, boolean empty) {
+            super.updateItem(cents, empty);
+            Player row = getTableRow() == null ? null : getTableRow().getItem();
+            if (empty || cents == null || row == null || ! row.isSold()) {
+               setText(null);
+            } else {
+               setText(Money.format((cents > 0 ? cents : Math.round(itemPrice * 100)) / 100.0));
+               setStyle("-fx-alignment: CENTER; -fx-font-size: 14px; -fx-font-weight: bold;");
+            }// end of if-else block
+         }
+      });
 
       // Paid or unpaid, only for tickets that have a buyer; the colour comes from the stylesheet
       paidColumn.setCellFactory(tc -> new TableCell<>() {
@@ -226,11 +244,12 @@ public class AddPlayerController {
          return;
       }// end of if block
       IDColumn.setPrefWidth(tableWidth * 0.06);
-      nameColumn.setPrefWidth(tableWidth * 0.23);
-      phoneNumberColumn.setPrefWidth(tableWidth * 0.17);
-      numberOfTicketsColumn.setPrefWidth(tableWidth * 0.14);
-      paidColumn.setPrefWidth(tableWidth * 0.13);
-      soldAtColumn.setPrefWidth(tableWidth * 0.23);
+      nameColumn.setPrefWidth(tableWidth * 0.19);
+      phoneNumberColumn.setPrefWidth(tableWidth * 0.15);
+      numberOfTicketsColumn.setPrefWidth(tableWidth * 0.11);
+      priceColumn.setPrefWidth(tableWidth * 0.12);
+      paidColumn.setPrefWidth(tableWidth * 0.12);
+      soldAtColumn.setPrefWidth(tableWidth * 0.21);
    }// end of applyColumnWidths method
 
    // Load the tickets of the item from the repository
@@ -280,9 +299,9 @@ public class AddPlayerController {
 
       // The rules (valid phone, tickets available) and the saving are the sales service's job
       boolean paidNow = paidCheck.isSelected();
-      List<Integer> assignedIDs;
+      SalesService.Sale sale;
       try {
-         assignedIDs = sales.sell(itemTitle, name, phone, tickets, paidNow);
+         sale = sales.sell(itemTitle, name, phone, tickets, paidNow);
       } catch (ValidationException e) {
          showAlert(Alert.AlertType.WARNING, Messages.get("alert.title.inputError"), Messages.get(e.messageKey(), e.arguments()));
          return;
@@ -294,12 +313,13 @@ public class AddPlayerController {
       }// end of try-catch block
 
       // Format the assigned IDs to display 10 IDs per line in the alert dialog
+      List<Integer> assignedIDs = sale.ticketIds();
       String IDs = IntStream.range(0, assignedIDs.size())
                             .mapToObj(i -> (i > 0 && i % 10 == 0) ? "\n" + assignedIDs.get(i) : assignedIDs.get(i).toString())
                             .collect(Collectors.joining(", "));
 
       // Show a confirmation message
-      String total = Money.format(ItemSales.of(List.of(), itemPrice).priceOf(tickets));
+      String total = Money.format(sale.totalCents() / 100.0);
       showAlert(Alert.AlertType.CONFIRMATION, Messages.get("player.added.title"),
                 Messages.get("player.addedBody", name, IDs, total, Messages.get(paidNow ? "player.sale.paid" : "player.sale.unpaid")));
 

@@ -25,6 +25,7 @@ Data is stored locally in a single **SQLite database file** (plus item-specific 
 ## ✨ Key Features
 
 - 🏷️ Create raffle items with title, description, ticket count, and ticket price
+- ✏️ Edit an item later (**Edit Item**): description, ticket price and number of tickets. More tickets are added at the end; fewer only while the last ones are unsold. Every ticket remembers the price it was sold at, so changing the price never changes what earlier buyers paid or owe
 - 🖼️ Pictures without copying files by hand: choose the item's picture from anywhere on the computer (it is copied into the item's folder), add more pictures later and pick the main one from the View Item screen
 - 👤 Sell tickets to players and auto-assign ticket IDs
 - 💶 Price per ticket, the amount to pay shown while typing, "paid now" or owed, and a per-item summary of money collected and still outstanding; mark a buyer's tickets as paid or unpaid later
@@ -122,7 +123,7 @@ At runtime, the application writes data to the user’s home directory:
 
 ### The database
 
-`data/raffle.db` is a SQLite file with three tables: `items` (title, description, picture, price), `tickets` (one row per ticket of an item: buyer name and phone, paid, time of sale) and `draws` (the draw history). How many tickets a buyer holds is worked out from the tickets, not stored. The layout is versioned (`PRAGMA user_version`): a database made by an older version of the application is brought up to date step by step when it is opened, and one made by a *newer* version is refused instead of being damaged.
+`data/raffle.db` is a SQLite file with three tables: `items` (title, description, picture, price), `tickets` (one row per ticket of an item: buyer name and phone, paid, time of sale and the price it was sold for) and `draws` (the draw history). How many tickets a buyer holds is worked out from the tickets, not stored. The layout is versioned (`PRAGMA user_version`): a database made by an older version of the application is brought up to date step by step when it is opened (step 2 added the price of each ticket), and one made by a *newer* version is refused instead of being damaged.
 
 ### Moving from the CSV files of earlier versions
 
@@ -154,9 +155,9 @@ The ticket ledger of one raffle item:
 - Player name
 - Phone number
 - Number of tickets associated with that buyer
-- Paid (`true`/`false`) and the time of sale (UTC, ISO-8601)
+- Paid (`true`/`false`), the time of sale (UTC, ISO-8601) and the price the ticket was sold for
 
-Ledgers written by older versions have only the first four columns. They are read as they are (their sold tickets count as paid, since payments were not tracked) and get the new columns the next time they are saved.
+Ledgers written by older versions have fewer columns. They are read as they are (sold tickets without payment information count as paid, since payments were not tracked; tickets without a recorded price count at the item's price) and get the new columns the next time they are saved. When a price is changed, sold tickets without a recorded price are pinned to the price the item had before.
 
 ---
 
@@ -224,8 +225,8 @@ The UI is split into focused JavaFX controllers:
 - `ItemSales` — tickets sold, paid and owed, and money collected/outstanding for an item (money counted in cents)
 - `Payments` — marking the tickets of a buyer paid or unpaid
 - `DrawSession` — one sitting: how many winners, who has won, who can still win ("one prize per person")
-- `SalesService` — sells tickets, takes them back and records payments (validates, reads the ledger, changes it, saves it); `TicketSales` holds the pure ticket logic behind it
-- `ItemService` — adds items (folder for the pictures, unsold tickets) and deletes them; `overview()` lists the items with their sales figures
+- `SalesService` — sells tickets (each at the item's price at that moment), takes them back and records payments (validates, reads the ledger, changes it, saves it); `TicketSales` holds the pure ticket logic behind it
+- `ItemService` — adds, edits and deletes items (folder for the pictures, unsold tickets, the rules of an edit); `overview()` lists the items with their sales figures
 - `TicketLookup` — finds tickets by number, phone or name for the status screen
 - `ValidationException` — carries the key of the message to show, so services know nothing about language or screens
 
@@ -317,7 +318,7 @@ The repository contains automated tests for:
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 28 test classes, 171 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
+Current test suite: 28 test classes, 203 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
 
 ---
 
@@ -338,7 +339,7 @@ Both carry their own Java runtime. The installer is not code-signed, so Windows 
 - `.github/workflows/release.yml` — builds the Windows installer and the portable zip on a Windows machine:
   - push a tag such as `v1.0.0` (`git tag v1.0.0 && git push origin v1.0.0`) and the files are attached to a new GitHub Release;
   - or run it by hand from the *Actions* tab (*Windows installer* → *Run workflow*) and download the files from the run's artifacts (the button appears once this workflow file is on the default branch);
-  - it also builds (without publishing) whenever something in `packaging/` or the workflow itself changes.
+  - it also builds (without publishing) whenever something in `packaging/`, the workflow itself, `pom.xml` or `module-info.java` changes.
 
 ### Build a package on your own machine
 
@@ -360,6 +361,7 @@ The JavaFX UI currently includes these views:
 - Loading view
 - Main view
 - Add item view
+- Edit item view
 - Add player view
 - Draw view
 - View item view
@@ -379,4 +381,3 @@ The JavaFX UI currently includes these views:
 
 - An optional remote connection (several operators on one raffle)
 - Sales reports, PDF export, winner certificates and ticket receipts
-- Editing an item after it was created (price, description, number of tickets)
