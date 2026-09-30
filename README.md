@@ -52,7 +52,7 @@ Data is stored locally using **CSV files** and item-specific image folders under
 | 🏗️ Build | Maven |
 | ✅ Testing | JUnit 5 |
 | 💾 Storage | Local CSV files |
-| 📦 Packaging | JavaFX Maven Plugin, Launch4j artifacts in `out/artifacts/` |
+| 📦 Packaging | `jpackage` (Windows installer and portable zip with its own Java runtime), built by GitHub Actions |
 
 ---
 
@@ -151,6 +151,8 @@ Ledgers written by older versions have only the first four columns. They are rea
 ## 📁 Project Structure
 
 ```text
+.github/workflows/   CI (tests) and the Windows installer build
+packaging/           jpackage script and the Windows icon
 src/
   main/
     java/
@@ -245,9 +247,8 @@ Operator-facing safeguards include:
 
 ## 📋 Requirements
 
-- Java 21
-- Maven 3.9+
-- Windows is the primary packaged target for the included `.exe` artifact
+- To develop or build: a full JDK 21 (it includes `jpackage`) and Maven 3.9+
+- To run the packaged app (see *Installing and Packaging*): nothing, it carries its own Java runtime
 
 ---
 
@@ -290,18 +291,34 @@ Current test suite: 20 test classes, 89 JUnit tests (`mvn test`). The controller
 
 ---
 
-## 📦 Included Artifacts
+## 📦 Installing and Packaging
 
-The repository includes generated application artifacts in:
+### For users (Windows)
 
-```text
-out/artifacts/Sell_and_Win_Raffle_jar/
+Download from the **Releases** page of the repository:
+
+- `Sell-and-Win-Raffle-<version>-windows-setup.exe` — installer (per user, no administrator rights; adds a Start menu entry and a desktop shortcut; installing a newer version replaces the old one and keeps the data)
+- `Sell-and-Win-Raffle-<version>-windows-portable.zip` — unzip and run `Sell and Win Raffle.exe` from any folder, no installation
+
+Both carry their own Java runtime. The installer is not code-signed, so Windows SmartScreen may show "Windows protected your PC": choose *More info* → *Run anyway*. The data stays in `~/Sell & Win Raffle/`, outside the program folder, so updating or uninstalling never touches it.
+
+### Build the packages (GitHub Actions)
+
+- `.github/workflows/ci.yml` — compiles and runs the tests on every push and pull request.
+- `.github/workflows/release.yml` — builds the Windows installer and the portable zip on a Windows machine:
+  - push a tag such as `v1.0.0` (`git tag v1.0.0 && git push origin v1.0.0`) and the files are attached to a new GitHub Release;
+  - or run it by hand from the *Actions* tab (*Windows installer* → *Run workflow*) and download the files from the run's artifacts.
+
+### Build a package on your own machine
+
+```bash
+packaging/package.sh                # app-image: a folder with the launcher, the runtime and the app
+packaging/package.sh app-image exe  # on Windows, also the installer (needs the WiX Toolset 3)
 ```
 
-That folder contains:
+The result is in `target/dist`. Installers can only be built on the operating system they are for. Set `APP_VERSION` (for example `1.2.0`) to override the version from `pom.xml`.
 
-- `Sell_and_Win_Raffle.jar`
-- `Sell & Win Raffle.exe`
+The folder `out/artifacts/` holds old builds from before the packaging above (a plain jar and a Launch4j `.exe`, which needs Java installed). They are not updated any more.
 
 ---
 

@@ -17,6 +17,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import raffle.controllers.*;
 import raffle.models.Item;
+import raffle.ui.AppIcon;
 import raffle.ui.Dialogs;
 import raffle.ui.Theme;
 import raffle.utils.AppPaths;
@@ -36,6 +37,7 @@ public class App extends Application {
    public void start(Stage primaryStage) {
       this.primaryStage = primaryStage;
       this.primaryStage.setTitle("Sell & Win Raffle");
+      AppIcon.apply(this.primaryStage);
       Messages.initFromSettings();
       Theme.initFromSettings();
 

@@ -1,0 +1,91 @@
+name: Windows installer
+
+# Builds the Windows installer (.exe) and a portable zip. Both contain their own Java runtime, so the computer that
+# runs them needs nothing installed.
+#   - Push a tag like v1.0.0 to build them and publish them as a GitHub Release.
+#   - Or start it by hand (Actions tab, "Windows installer", Run workflow) to get the files as a build artifact.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version of the package, numeric like 1.0.0 (empty: the one from pom.xml)'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # jpackage (JDK 21) builds .exe installers with the WiX Toolset 3; the runner image usually has it already
+      - name: Make sure WiX 3 is available
+        shell: pwsh
+        run: |
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install wixtoolset --no-progress -y
+          }
+          $wix = Get-ChildItem "${env:ProgramFiles(x86)}\WiX Toolset v3*\bin" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($wix) { Add-Content $env:GITHUB_PATH $wix.FullName }
+
+      - name: Work out the version
+        id: version
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            v="${GITHUB_REF_NAME#v}"
+          else
+            v="${{ github.event.inputs.version }}"
+          fi
+          if [ -z "$v" ]; then
+            v="$(sed -n 's:.*<version>\(.*\)</version>.*:\1:p' pom.xml | head -1)"
+          fi
+          echo "value=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        shell: bash
+        run: mvn -B verify
+
+      - name: Package
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.version.outputs.value }}
+        run: packaging/package.sh app-image exe
+
+      - name: Name the files
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          $dist = "target/dist"
+          $app = Join-Path $dist "Sell and Win Raffle"
+          Compress-Archive -Path $app -DestinationPath "$dist/Sell-and-Win-Raffle-$env:VERSION-windows-portable.zip"
+          Get-ChildItem $dist -Filter "*.exe" | Select-Object -First 1 |
+            Rename-Item -NewName "Sell-and-Win-Raffle-$env:VERSION-windows-setup.exe"
+          Get-ChildItem $dist -File
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sell-and-win-raffle-windows
+          path: |
+            target/dist/*.exe
+            target/dist/*.zip
+
+      - name: Publish the release
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" target/dist/*.exe target/dist/*.zip \
+            --title "Sell & Win Raffle $GITHUB_REF_NAME" --generate-notes

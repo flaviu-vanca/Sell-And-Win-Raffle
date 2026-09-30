@@ -19,6 +19,7 @@ public final class Dialogs {
       alert.setHeaderText(header);
       alert.setContentText(content);
       Theme.apply(alert.getDialogPane());
+      AppIcon.apply(alert.getDialogPane().getScene().getWindow());
       return alert;
    }// end of build method
 

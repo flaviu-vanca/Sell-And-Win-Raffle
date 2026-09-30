@@ -23,6 +23,7 @@ import raffle.models.Player;
 import raffle.services.DrawHistory;
 import raffle.services.DrawSession;
 import raffle.services.RaffleDraw;
+import raffle.ui.AppIcon;
 import raffle.ui.ConfettiCanvas;
 import raffle.ui.Dialogs;
 import raffle.ui.Theme;
@@ -337,6 +338,7 @@ public class DrawController {
       // Create a new stage for the Player Status window
       Stage newStage = new Stage();
       newStage.setTitle(Messages.get("status.window.title"));
+      AppIcon.apply(newStage);
       newStage.setScene(scene);
 
       // Get the controller for the Player Status window and set the main app
