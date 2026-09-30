@@ -4,9 +4,14 @@ name: Windows installer
 # runs them needs nothing installed.
 #   - Push a tag like v1.0.0 to build them and publish them as a GitHub Release.
 #   - Or start it by hand (Actions tab, "Windows installer", Run workflow) to get the files as a build artifact.
+#   - It also runs (without publishing) when the packaging files change, so a broken installer build shows up at once.
 on:
   push:
     tags: ['v*']
+    branches: ['**']
+    paths:
+      - 'packaging/**'
+      - '.github/workflows/release.yml'
   workflow_dispatch:
     inputs:
       version:

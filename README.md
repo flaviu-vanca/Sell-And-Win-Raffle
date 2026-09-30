@@ -307,7 +307,8 @@ Both carry their own Java runtime. The installer is not code-signed, so Windows 
 - `.github/workflows/ci.yml` — compiles and runs the tests on every push and pull request.
 - `.github/workflows/release.yml` — builds the Windows installer and the portable zip on a Windows machine:
   - push a tag such as `v1.0.0` (`git tag v1.0.0 && git push origin v1.0.0`) and the files are attached to a new GitHub Release;
-  - or run it by hand from the *Actions* tab (*Windows installer* → *Run workflow*) and download the files from the run's artifacts.
+  - or run it by hand from the *Actions* tab (*Windows installer* → *Run workflow*) and download the files from the run's artifacts (the button appears once this workflow file is on the default branch);
+  - it also builds (without publishing) whenever something in `packaging/` or the workflow itself changes.
 
 ### Build a package on your own machine
 
