@@ -16,7 +16,11 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import raffle.controllers.*;
 import raffle.models.Item;
+import raffle.utils.AppPaths;
+import raffle.utils.BackupService;
+import raffle.utils.Messages;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -28,6 +32,13 @@ public class App extends Application {
    public void start(Stage primaryStage) {
       this.primaryStage = primaryStage;
       this.primaryStage.setTitle("Sell & Win Raffle");
+
+      // Keep a copy of the data from before this session. A failed backup must never stop the app from starting.
+      try {
+         BackupService.snapshot(AppPaths.root());
+      } catch (IOException e) {
+         System.err.println(Messages.get("backup.failed") + " " + e.getMessage());
+      }// end of try-catch block
 
       showLoadingView();
    }// end of start method

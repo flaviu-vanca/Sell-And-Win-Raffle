@@ -7,6 +7,10 @@ import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import raffle.models.Item;
+import raffle.models.Player;
+import raffle.utils.AppPaths;
+import raffle.utils.ItemDataReaderAndWriter;
+import raffle.utils.PlayerDataReaderAndWriter;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,9 +61,8 @@ public class AddItemController {
    @FXML
    private void handleAddImage() {
       // Get the title from the title text field
-      String userHome = System.getProperty("user.home");
-      Path appDirectoryPath = Paths.get(userHome, "Sell & Win Raffle");
-      Path dataFilePath = appDirectoryPath.resolve("data/data.csv");
+      Path appDirectoryPath = AppPaths.root();
+      Path dataFilePath = AppPaths.catalogFile();
 
       // Create a file chooser dialog
       FileChooser fileChooser = new FileChooser();
@@ -95,19 +98,18 @@ public class AddItemController {
 
          // Read the data.csv and match titles
          try {
-            List<String> existingItems = Files.readAllLines(dataFilePath);
-            boolean updated = false;
-            for (int i = 0; i < existingItems.size(); i++) {
-               String[] fields = existingItems.get(i).split(",");
-               if (fields.length > 1 && fields[1].replace("\"", "").equals(title)) {
-                  fields[0] = imagePath;  // Update the image path
-                  existingItems.set(i, String.join(",", fields));
-                  updated = true;
-                  break;
-               }// end of if statement
-            }// end of for loop
+            List<Item> existingItems = ItemDataReaderAndWriter.readItemsFromFile(dataFilePath);
+            final String itemTitle = title;
+            boolean updated = existingItems.stream()
+                                           .filter(item -> item.getTitle().equals(itemTitle))
+                                           .findFirst()
+                                           .map(item -> {
+                                              item.setImage(imagePath);// Update the image path
+                                              return true;
+                                           })
+                                           .orElse(false);
             if (updated) {
-               Files.write(dataFilePath, existingItems);
+               ItemDataReaderAndWriter.writeItemsToCSV(existingItems, dataFilePath);
                showAlert(Alert.AlertType.CONFIRMATION, "Image Updated", "The default image has been updated successfully !");
             } else {
                showAlert(Alert.AlertType.ERROR, "Error", "The image path could not be updated !");
@@ -174,14 +176,11 @@ public class AddItemController {
          return;
       }// end of try-catch block
 
-      String directoryName = title;
-      String userHome = System.getProperty("user.home");
-      String directoryPath = Paths.get(userHome, "Sell & Win Raffle", directoryName).toString();
-      Path recordsPath = Paths.get(userHome, "Sell & Win Raffle", "records");
-      Path csvFilePath = recordsPath.resolve(directoryName + ".csv");
+      Path recordsPath = AppPaths.recordsDir();
+      Path csvFilePath = AppPaths.recordsFile(title);
 
       // Check if directory already exists
-      Path path = Paths.get(directoryPath);
+      Path path = AppPaths.itemDir(title);
       if (Files.exists(path)) {
          showAlert(Alert.AlertType.WARNING, "Directory already exists !", "A directory for " + title + " already exists !");
          return;
@@ -200,47 +199,28 @@ public class AddItemController {
          Files.createDirectories(path);
          Files.createDirectories(recordsPath);
 
-         // Generate the CSV content
-         List<String> csvContent = generateCSVContent(numberOfTickets);
-         Files.write(csvFilePath, csvContent);
+         // One empty ledger row per ticket
+         PlayerDataReaderAndWriter.writePlayersToCSV(generateEmptyTickets(numberOfTickets), csvFilePath);
 
-         // Create a new item
-         Item newItem = new Item(imagePath, title, description, numberOfTickets, ticketPrice);
+         // Create a new item (no image yet: stored as empty text, the main view shows the default logo)
+         Item newItem = new Item(imagePath == null ? "" : imagePath, title, description, numberOfTickets, ticketPrice);
 
-         // Prepare the item data
-         String itemData = String.join(",",
-                                       newItem.getImage(),
-                                       "\"" + newItem.getTitle() + "\"",
-                                       "\"" + newItem.getDescription() + "\"",  // Add double quotes around the description
-                                       String.valueOf(newItem.getTickets()),
-                                       String.valueOf(newItem.getPrice()));
-
-         // Create the data directory and the data.csv file
-         Path dataDirectoryPath = Paths.get(userHome, "Sell & Win Raffle", "data");
-         Path dataFilePath = dataDirectoryPath.resolve("data.csv");
-
-         // Create the data directory
-         Files.createDirectories(dataDirectoryPath);
-
-         // Check if the data.csv file exists
-         if (Files.exists(dataFilePath)) {
-            // Read the existing items from the file
-            List<String> existingItems = Files.readAllLines(dataFilePath);
-
-            // Add the new item to the list
-            existingItems.add(itemData);
-
-            // Write the updated list back to the file
-            Files.write(dataFilePath, existingItems);
-         } else {
-            // Write the header and the item data to the data.csv file
-            List<String> lines = new ArrayList<>();
-            lines.add("Image, Title, Description, Available Tickets, Ticket Price");
-            lines.add(itemData);
-            Files.write(dataFilePath, lines);
-         }// end of if-else block
+         // Add it to the catalog, creating the data directory and data.csv on first use
+         Path dataFilePath = AppPaths.catalogFile();
+         Files.createDirectories(dataFilePath.getParent());
+         List<Item> items = Files.exists(dataFilePath) ? ItemDataReaderAndWriter.readItemsFromFile(dataFilePath) : new ArrayList<>();
+         items.add(newItem);
+         ItemDataReaderAndWriter.writeItemsToCSV(items, dataFilePath);
       } catch (IOException e) {
+         // Do not leave a half created item behind: it would block adding the same title again
+         try {
+            Files.deleteIfExists(csvFilePath);
+            Files.deleteIfExists(path);
+         } catch (IOException ignored) {
+            // nothing more can be done here
+         }// end of try-catch block
          showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while creating the directory or file !");
+         return;
       }// end of try-catch block
 
       // Show a confirmation message
@@ -250,14 +230,12 @@ public class AddItemController {
 
    }// end of handleAddItem method
 
-   // Generate the CSV content for the item
-   private List<String> generateCSVContent(int numberOfTickets) {
-      List<String> content = IntStream.rangeClosed(1, numberOfTickets)
-                                      .mapToObj(i -> i + ",,,")
-                                      .collect(Collectors.toList());
-      content.addFirst("ID, Name, Phone Number, Purchased Tickets");
-      return content;
-   }// end of generateCSVContent method
+   // Generate the ledger rows for the item: every ticket starts unsold (empty name and phone)
+   private List<Player> generateEmptyTickets(int numberOfTickets) {
+      return IntStream.rangeClosed(1, numberOfTickets)
+                      .mapToObj(id -> new Player(id, "", "", 0))
+                      .collect(Collectors.toList());
+   }// end of generateEmptyTickets method
 
    // Show an alert dialog
    private void showAlert(Alert.AlertType alertType, String title, String message) {

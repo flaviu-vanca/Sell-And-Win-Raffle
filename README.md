@@ -30,7 +30,10 @@ Data is stored locally using **CSV files** and item-specific image folders under
 - ♻️ Reuse ticket IDs when player records are removed
 - 📦 Track remaining ticket inventory per item
 - 🔎 Search player status by name, phone number, or ticket ID
-- 🎲 Run a live draw and show the winner (or indicate when a selected ticket was not sold)
+- 🎲 Run a live draw: the winner is picked with a secure random generator, only among tickets that were actually sold
+- 📜 Every draw is saved to a history file (time, item, ticket, winner)
+- 🛟 Crash-safe saves (write to a temp file, then replace) and an automatic backup on every start-up
+- 🌍 English and Romanian (follows the system language; texts live in `i18n/messages*.properties`)
 - 🧰 Package as a **JAR** and a Windows **.exe** (Launch4j)
 
 ---
@@ -106,8 +109,12 @@ At runtime, the application writes data to the user’s home directory:
     data.csv
   records/
     <item-title>.csv
+    <item-title>.csv.bak      (previous version, kept on every save)
   <item-title>/
     image files...
+  backups/
+    <yyyyMMdd-HHmmss>/        (snapshot of data/ and records/ taken at each start-up, newest 20 kept)
+    deleted/                  (ledgers of deleted items are moved here, never destroyed)
 ```
 
 ### `data/data.csv`
@@ -119,6 +126,10 @@ Stores the master item catalog with:
 - Description
 - Available tickets
 - Ticket price
+
+### `data/draws.csv`
+
+Append-only history of every draw: time, item, winning ticket, winner name and phone number.
 
 ### `records/<item-title>.csv`
 
@@ -141,17 +152,19 @@ src/
         controllers/
         main/
         models/
+        services/
         utils/
     resources/
       fxml_files/
+      i18n/
       icons/
       stylesheets/
   test/
-    raffle/
-      controllers/
-      main/
-      models/
-      utils/
+    java/
+      raffle/
+        models/
+        services/
+        utils/
 ```
 
 ---
@@ -180,12 +193,19 @@ The UI is split into focused JavaFX controllers:
 - `Item`
 - `Player`
 
-### Persistence utilities
+### Services
 
-- `ItemDataReaderAndWriter`
-- `PlayerDataReaderAndWriter`
+- `RaffleDraw` — picks the winner (secure random, sold tickets only, optional exclusions); no JavaFX, fully unit tested
+- `DrawHistory` — append-only audit log of draws
 
-These utility classes handle CSV parsing and serialization.
+### Persistence and utilities
+
+- `ItemDataReaderAndWriter`, `PlayerDataReaderAndWriter` — CSV reading and writing (quotes and commas in names survive a round trip; files from older versions are still read)
+- `SafeFiles` — atomic writes with a `.bak` of the previous version
+- `BackupService` — start-up snapshots and archiving of deleted items
+- `AppPaths` — the one place that knows where data lives
+- `PhoneNumbers` — phone validation and normalisation (kept as text, 7–15 digits, optional `+`)
+- `Messages` — localized text from the resource bundles
 
 ---
 
@@ -195,9 +215,11 @@ Operator-facing safeguards include:
 
 - Empty-field validation on item and player forms
 - Positive-number validation for ticket counts and ticket price
-- Basic phone number validation
+- Phone number validation (7–15 digits, optional `+`; spaces and dashes are ignored)
 - File accessibility checks before writing CSV files
 - Confirmation dialogs before deleting items or player records
+- A failed save is reported and leaves the previous data in place
+- Deleting an item keeps its sales ledger in `backups/deleted/`
 
 ---
 
@@ -235,15 +257,14 @@ mvn clean package
 
 The repository contains automated tests for:
 
-- Controllers
+- Draw logic (only sold tickets win, exclusions, chance proportional to tickets held)
+- Draw history
+- CSV reading and writing, including files from older versions
+- Atomic saves and backups
+- Phone validation and localized messages
 - Models
-- CSV reader/writer utilities
-- Main application entry points
 
-Current repository test coverage signals include:
-
-- 12 test classes
-- 47 JUnit tests
+Current test suite: 11 test classes, 43 JUnit tests (`mvn test`). The controllers are not unit tested yet.
 
 ---
 
@@ -281,13 +302,13 @@ The JavaFX UI currently includes these views:
 - CSV-based persistence (not database-backed)
 - Designed for local use (not multi-user)
 - Images managed through the local file system
-- Draw can stop on a ticket that has not been sold (and the UI reports that explicitly)
+- Texts on most screens are still English only; the new draw, validation and backup texts are already localized
 
 ---
 
 ## 🛣️ Future Improvements
 
-- Replace CSV storage with a relational database for stronger concurrency support
+- Replace CSV storage with a local SQLite database, with an optional remote connection
 - Add sales reports and export features
 - Add installer-based distribution for non-technical operators
 - Track draw history and operational audit logs

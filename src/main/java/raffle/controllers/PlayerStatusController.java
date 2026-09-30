@@ -3,16 +3,15 @@ package raffle.controllers;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import raffle.models.Player;
+import raffle.utils.AppPaths;
+import raffle.utils.Messages;
+import raffle.utils.PhoneNumbers;
+import raffle.utils.PlayerDataReaderAndWriter;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class PlayerStatusController {
 
@@ -46,29 +45,11 @@ public class PlayerStatusController {
          return;
       }// end of if statement
 
-      // Get the records directory and the data file path
-      String userHome = System.getProperty("user.home");
-      Path recordsDirectory = Paths.get(userHome, "Sell & Win Raffle", "records");
-      Path dataFilePath = recordsDirectory.resolve(itemTitle + ".csv");
+      // Phone numbers are stored without spaces or dashes, so compare the same way
+      String phoneInput = PhoneNumbers.normalize(input);
 
-      // Check if the data file exists
-      try (Stream<String> lines = Files.lines(dataFilePath)) {
-         List<Player> matchingPlayers = lines.skip(1) // Skip the CSV header
-                                             .map(line -> line.split(","))
-                                             .filter(parts -> parts.length >= 4)
-                                             .map(parts -> {
-                                                try {
-                                                   int id = Integer.parseInt(parts[0].trim());
-                                                   String name = parts[1].replace("\"", "").trim();
-                                                   String phone = parts[2].replace("\"", "").trim();
-                                                   int tickets = Integer.parseInt(parts[3].trim());
-                                                   return new Player(id, name, phone, tickets);
-                                                } catch (NumberFormatException e) {
-                                                   return null;
-                                                }// end of try catch block
-                                             })
-                                             .filter(Objects::nonNull)
-                                             .toList();
+      try {
+         List<Player> matchingPlayers = PlayerDataReaderAndWriter.readPlayersFromFile(AppPaths.recordsFile(itemTitle));
 
          // Check if the player is found
          if (matchingPlayers.isEmpty()) {
@@ -77,13 +58,13 @@ public class PlayerStatusController {
          }// end of if statement
 
          // Check if the input is numeric
-         boolean isNumeric = input.chars().allMatch(Character::isDigit);
+         boolean isNumeric = phoneInput.chars().allMatch(Character::isDigit);
 
-         // if the input is numeric and less than 10 characters
-         if (isNumeric && input.length() < 10) {
+         // a number shorter than a phone number (7 digits) is a ticket ID
+         if (isNumeric && phoneInput.length() < 7) {
 
             // Search by ID
-            int inputId = Integer.parseInt(input);
+            int inputId = Integer.parseInt(phoneInput);
             Player matchingPlayer = matchingPlayers.stream()
                                                    .filter(player -> player.getId() == inputId)
                                                    .findFirst()
@@ -91,6 +72,8 @@ public class PlayerStatusController {
 
             if (matchingPlayer == null) {
                displayPlayerStatus.setText("\n\nPlayer with the given ID cannot be found !");
+            } else if (! matchingPlayer.isSold()) {
+               displayPlayerStatus.setText("\n\n" + Messages.get("status.ticketNotSold", String.valueOf(inputId)));
             } else {
                displayPlayerStatus.setText("Player found:\n"
                                                    + "Name: " + matchingPlayer.getName() + "\n"
@@ -103,12 +86,12 @@ public class PlayerStatusController {
                                                                             .collect(Collectors.groupingBy(Player::getPhoneNumber));
 
             // check if the map contains the input key (phone number)
-            if (playersByPhoneNumber.containsKey(input)) {
+            if (playersByPhoneNumber.containsKey(phoneInput)) {
 
                // Display players with the given phone number
-               List<Player> playersWithPhone = playersByPhoneNumber.get(input);
+               List<Player> playersWithPhone = playersByPhoneNumber.get(phoneInput);
                StringBuilder resultText = new StringBuilder();
-               resultText.append("Players with phone number ").append(input).append(":\n");
+               resultText.append("Players with phone number ").append(phoneInput).append(":\n");
 
                // Group players by name
                Map<String, List<Player>> playersByName = playersWithPhone.stream()
@@ -159,7 +142,7 @@ public class PlayerStatusController {
                }// end of if block
             }// end of if block
          }// end of if block
-      } catch (IOException e) {
+      } catch (IOException | NumberFormatException e) {
          showAlert(Alert.AlertType.ERROR, "Error", "Failed to read the player records!");
       }// end of try catch block
    }// end of handleCheckPlayer method

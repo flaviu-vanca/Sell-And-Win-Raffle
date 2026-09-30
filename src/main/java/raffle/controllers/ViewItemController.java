@@ -5,6 +5,7 @@ import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import raffle.models.Item;
+import raffle.utils.AppPaths;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,7 +60,7 @@ public class ViewItemController {
    private void loadImages(String title) {
 
       imageFiles = new ArrayList<>();
-      File directory = new File(System.getProperty("user.home") + "/Sell & Win Raffle/" + title);
+      File directory = AppPaths.itemDir(title).toFile();
       if (directory.exists() && directory.isDirectory()) {
          File[] files = directory.listFiles((dir, name) -> {
             String lowerCaseName = name.toLowerCase();

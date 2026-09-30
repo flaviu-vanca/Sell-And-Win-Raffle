@@ -48,6 +48,12 @@ public class Player {
       return numberOfTickets;
    }
 
+   /** A ticket row is sold when a buyer name is set; unsold rows are kept in the ledger with empty fields. */
+   public boolean isSold() {
+      String buyer = name.get();
+      return buyer != null && ! buyer.isBlank();
+   }
+
    public void setName(String name) {
       this.name.set(name);
    }

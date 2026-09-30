@@ -12,7 +12,10 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import raffle.main.App;
 import raffle.models.Item;
+import raffle.utils.AppPaths;
+import raffle.utils.BackupService;
 import raffle.utils.ItemDataReaderAndWriter;
+import raffle.utils.Messages;
 
 import java.io.File;
 import java.io.IOException;
@@ -63,11 +66,11 @@ public class MainViewController {
                @Override
                protected void updateItem(String imagePath, boolean empty) {
                   super.updateItem(imagePath, empty);
-                  if (empty || imagePath == null) {
+                  if (empty) {
                      setGraphic(null);
                   } else {
                      try {
-                        Image image = new Image(Paths.get(imagePath).toUri().toString(), 250, 250, true, true);
+                        Image image = loadItemImage(imagePath);
                         imageView.setImage(image);
                         imageView.setFitWidth(250);
                         imageView.setFitHeight(250);
@@ -123,7 +126,7 @@ public class MainViewController {
             if (empty) {
                setText(null);
             } else {
-               setText("\u20AC" + item.toString());
+               setText(String.format("\u20AC%.2f", item));
                setStyle("-fx-alignment: CENTER; -fx-font-size: 30px; -fx-font-weight: bold;");
             }//end of if-else block
          }//end of updateItem method
@@ -181,8 +184,7 @@ public class MainViewController {
 
    // Load items from the data.csv file
    private void loadItemsFromCSV() {
-      String userHome = System.getProperty("user.home");
-      Path dataFilePath = Paths.get(userHome, "Sell & Win Raffle", "data", "data.csv");
+      Path dataFilePath = AppPaths.catalogFile();
 
       if (Files.exists(dataFilePath)) {
          try {
@@ -228,10 +230,15 @@ public class MainViewController {
 
          Optional<ButtonType> result = alert.showAndWait();
          if (result.isPresent() && result.get() == buttonTypeOne) {
-            itemList.remove(selectedItem);
-            deleteDirectory(selectedItem.getTitle());
-            ItemDataReaderAndWriter.writeItemsToCSV(itemList, Paths.get(System.getProperty("user.home"), "Sell & Win Raffle", "data", "data.csv"));
-            showAlert(Alert.AlertType.CONFIRMATION, "Item Deleted", "Item deleted successfully !");
+            try {
+               ItemDataReaderAndWriter.writeItemsToCSV(itemList.filtered(item -> item != selectedItem), AppPaths.catalogFile());
+               itemList.remove(selectedItem);
+               archiveRecords(selectedItem.getTitle());
+               deleteDirectory(selectedItem.getTitle());
+               showAlert(Alert.AlertType.CONFIRMATION, "Item Deleted", "Item deleted successfully !\n\n" + Messages.get("item.recordsArchived"));
+            } catch (IOException e) {
+               showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating the data.csv file !");
+            }// end of try-catch block
          }//end of if block
       } else {
          showAlert(Alert.AlertType.INFORMATION, "No Selection", "No item selected for deletion.");
@@ -273,18 +280,38 @@ public class MainViewController {
       control.setTooltip(tooltip);
    }//end of addTooltip method
 
-   // Delete the directory with the given title
+   // Delete the image directory with the given title
    private void deleteDirectory(String title) {
-      String userHome = System.getProperty("user.home");
-      Path directoryPath = Paths.get(userHome, "Sell & Win Raffle", title);
-      File directory = directoryPath.toFile();
-      if (directory.exists()) {
-         for (File file : Objects.requireNonNull(directory.listFiles())) {
+      File directory = AppPaths.itemDir(title).toFile();
+      File[] files = directory.listFiles();
+      if (files != null) {
+         for (File file : files) {
             file.delete();
          }
          directory.delete();
       }//end of if block
    }//end of deleteDirectory method
+
+   // The ticket ledger holds buyer data and money owed, so it is moved to backups instead of being destroyed.
+   // It also frees the title, which previously could not be reused until the ledger was deleted by hand.
+   private void archiveRecords(String title) {
+      Path records = AppPaths.recordsFile(title);
+      if (Files.exists(records)) {
+         try {
+            BackupService.archive(AppPaths.root(), records);
+         } catch (IOException e) {
+            System.err.println("Could not archive " + records + ": " + e.getMessage());
+         }//end of try-catch block
+      }//end of if block
+   }//end of archiveRecords method
+
+   // Item image, or the bundled logo when the item has no image (or the file is gone)
+   private Image loadItemImage(String imagePath) {
+      if (imagePath != null && ! imagePath.isBlank() && Files.isRegularFile(Paths.get(imagePath))) {
+         return new Image(Paths.get(imagePath).toUri().toString(), 250, 250, true, true);
+      }// end of if block
+      return new Image(Objects.requireNonNull(getClass().getResourceAsStream("/icons/logo.png")), 250, 250, true, true);
+   }//end of loadItemImage method
 
    @FXML
    private void handleViewItem(){

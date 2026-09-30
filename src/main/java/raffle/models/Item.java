@@ -27,6 +27,10 @@ public class Item {
       return image;
    }
 
+   public void setImage(String image) {
+      this.image.set(image);
+   }
+
    public String getTitle() {
       return title.get();
    }

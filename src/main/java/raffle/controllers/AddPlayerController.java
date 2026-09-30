@@ -9,7 +9,10 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 import raffle.models.Item;
 import raffle.models.Player;
+import raffle.utils.AppPaths;
 import raffle.utils.ItemDataReaderAndWriter;
+import raffle.utils.Messages;
+import raffle.utils.PhoneNumbers;
 import raffle.utils.PlayerDataReaderAndWriter;
 
 import java.io.FileOutputStream;
@@ -167,9 +170,8 @@ public class AddPlayerController {
 
    // Load players from the records directory based on item title
    private void loadPlayersFromCSV() {
-      String userHome = System.getProperty("user.home");
-      recordsDirectory = Paths.get(userHome, "Sell & Win Raffle", "records");
-      Path dataFilePath = recordsDirectory.resolve(itemTitle + ".csv");
+      recordsDirectory = AppPaths.recordsDir();
+      Path dataFilePath = AppPaths.recordsFile(itemTitle);
 
       if (Files.exists(dataFilePath)) {
          try {
@@ -221,8 +223,7 @@ public class AddPlayerController {
 
    // Update the number of tickets in the CSV file
    private void updateTicketsInCSV() {
-      String userHome = System.getProperty("user.home");
-      Path dataFilePath = Paths.get(userHome, "Sell & Win Raffle", "data", "data.csv");
+      Path dataFilePath = AppPaths.catalogFile();
 
       if (isFileAccessibleForWriting(dataFilePath)) {
          showAlert(Alert.AlertType.ERROR, "File Access Error", "The data.csv file is open in another application. Please close it and try again.");
@@ -231,11 +232,11 @@ public class AddPlayerController {
 
       try {
          List<Item> items = ItemDataReaderAndWriter.readItemsFromFile(dataFilePath);
-         items.stream()
-              .filter(item -> item.getTitle().equals(itemTitle))
-              .findFirst()
-              .ifPresent(item -> item.setTickets(availableIDs.size()));
-         ItemDataReaderAndWriter.writeItemsToCSV(items, dataFilePath);
+         Optional<Item> catalogItem = items.stream().filter(item -> item.getTitle().equals(itemTitle)).findFirst();
+         if (catalogItem.isPresent() && catalogItem.get().getTickets() != availableIDs.size()) {
+            catalogItem.get().setTickets(availableIDs.size());
+            ItemDataReaderAndWriter.writeItemsToCSV(items, dataFilePath);
+         }// end of if block
       } catch (IOException e) {
          showAlert(Alert.AlertType.ERROR, "Error", "An error occurred while updating the tickets in data.csv !");
       }// end of try-catch block
@@ -244,8 +245,7 @@ public class AddPlayerController {
    // Add a new player to the table
    @FXML
    private void handleAddPlayer() throws IOException {
-      String userHome = System.getProperty("user.home");
-      Path recordsFilePath = Paths.get(userHome, "Sell & Win Raffle", "records", itemTitle + ".csv");
+      Path recordsFilePath = AppPaths.recordsFile(itemTitle);
 
       // Check if the records.csv file is accessible
       if (isFileAccessibleForWriting(recordsFilePath)) {
@@ -270,16 +270,10 @@ public class AddPlayerController {
       }
 
       // Validate the phone number input field
-      try {
-         int phoneNumberValue = Integer.parseInt(phoneNumber.getText());
-         if (phoneNumberValue <= 0 || phoneNumber.getText().length() < 10) {
-            showAlert(Alert.AlertType.WARNING, "Input Error", "Enter a valid phone number format of 10 digits!");
-            return;
-         }
-      } catch (NumberFormatException e) {
-         showAlert(Alert.AlertType.WARNING, "Input Error", "Enter valid digits in Phone Number field!");
+      if (! PhoneNumbers.isValid(phoneNumber.getText())) {
+         showAlert(Alert.AlertType.WARNING, "Input Error", Messages.get("phone.invalid"));
          return;
-      }// end of try-catch block
+      }// end of if block
 
       // Validate the number of tickets input field
       try {
@@ -294,7 +288,7 @@ public class AddPlayerController {
       }// end of try-catch block
 
       String name = playerName.getText().trim();
-      String phone = phoneNumber.getText().trim();
+      String phone = PhoneNumbers.normalize(phoneNumber.getText());
       int tickets;
 
       // Validate the input fields
@@ -317,6 +311,7 @@ public class AddPlayerController {
 
       // Assign random IDs to the new tickets
       Random random = new Random();
+      List<Integer> availableBeforeSale = new ArrayList<>(availableIDs);
       List<Integer> assignedIDs = new ArrayList<>();
 
       for (int i = 0; i < tickets; i++) {
@@ -356,7 +351,15 @@ public class AddPlayerController {
       });// end of forEach loop
 
       // Write the updated player list to the CSV file
-      PlayerDataReaderAndWriter.writePlayersToCSV(new ArrayList<>(playerList), recordsDirectory.resolve(itemTitle + ".csv"));
+      try {
+         PlayerDataReaderAndWriter.writePlayersToCSV(new ArrayList<>(playerList), AppPaths.recordsFile(itemTitle));
+      } catch (IOException e) {
+         // Nothing was saved: put the tickets back and reload what is really on disk
+         availableIDs = availableBeforeSale;
+         showAlert(Alert.AlertType.ERROR, "Error", "The sale could not be saved. No tickets were sold.\n\n" + e.getMessage());
+         handleRefresh();
+         return;
+      }// end of try-catch block
 
       // Format the assigned IDs to display 10 IDs per line in the alert dialog
       String IDs = IntStream.range(0, assignedIDs.size())
@@ -375,13 +378,12 @@ public class AddPlayerController {
    // Remove the selected player from the table
    @FXML
    private void handleRemovePlayer() throws IOException {
-      String userHome = System.getProperty("user.home");
-      Path recordsFilePath = Paths.get(userHome, "Sell & Win Raffle", "records", itemTitle + ".csv");
+      Path recordsFilePath = AppPaths.recordsFile(itemTitle);
 
       // Check if the records.csv file is accessible
       if (isFileAccessibleForWriting(recordsFilePath)) {
          showAlert(Alert.AlertType.ERROR, "File Access Error", "The " + itemTitle + ".csv file is open in another application. Please close it and try again.");
-         return; // Return early, do not proceed with adding the player
+         return; // Return early, do not proceed with removing the player
       }
 
       // Get the selected players
@@ -430,7 +432,13 @@ public class AddPlayerController {
             // Sort the available IDs
             Collections.sort(availableIDs);
             // Write the updated player list to the CSV file
-            PlayerDataReaderAndWriter.writePlayersToCSV(new ArrayList<>(playerList), recordsDirectory.resolve(itemTitle + ".csv"));
+            try {
+               PlayerDataReaderAndWriter.writePlayersToCSV(new ArrayList<>(playerList), AppPaths.recordsFile(itemTitle));
+            } catch (IOException e) {
+               showAlert(Alert.AlertType.ERROR, "Error", "The change could not be saved. The records were left as they were.\n\n" + e.getMessage());
+               handleRefresh();
+               return;
+            }// end of try-catch block
 
             showAlert(Alert.AlertType.CONFIRMATION, "Players Removed", "Selected players have been removed successfully!");
             handleRefresh();
