@@ -77,7 +77,7 @@ jobs:
             Rename-Item -NewName "Sell-and-Win-Raffle-$env:VERSION-windows-setup.exe"
           Get-ChildItem $dist -File
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: sell-and-win-raffle-windows
           path: |
