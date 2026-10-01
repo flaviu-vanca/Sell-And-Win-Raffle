@@ -115,6 +115,8 @@ At runtime, the application writes data to the user’s home directory:
   <item-title>/
     image files...
   settings.properties         (language, theme, currency and the optional organizer name)
+  logs/
+    app.log                   (what went wrong, if anything; moved to app.log.old past 1 MB)
   reports/
     <yyyyMMdd-HHmmss>-sales-report.html, ...-receipt.html, ...-certificates.html   (the printed documents, kept)
   exports/
@@ -347,7 +349,7 @@ Both carry their own Java runtime. The installer is not code-signed, so Windows 
 - `.github/workflows/release.yml` — builds the Windows installer and the portable zip on a Windows machine:
   - push a tag such as `v1.0.0` (`git tag v1.0.0 && git push origin v1.0.0`) and the files are attached to a new GitHub Release;
   - or run it by hand from the *Actions* tab (*Windows installer* → *Run workflow*) and download the files from the run's artifacts (the button appears once this workflow file is on the default branch);
-  - it also builds (without publishing) whenever something in `packaging/`, the workflow itself, `pom.xml` or `module-info.java` changes.
+  - it also builds (without publishing) on every pull request, so the installer of the code under review is always available as an artifact of the run.
 
 ### Build a package on your own machine
 

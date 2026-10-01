@@ -22,6 +22,7 @@ import raffle.ui.AppIcon;
 import raffle.ui.Dialogs;
 import raffle.ui.Documents;
 import raffle.ui.Theme;
+import raffle.utils.AppLog;
 import raffle.utils.AppPaths;
 import raffle.utils.BackupService;
 import raffle.utils.Fxml;
@@ -35,6 +36,7 @@ public class App extends Application {
 
    @Override
    public void start(Stage primaryStage) {
+      AppLog.install(AppPaths.logFile());// first, so that even a failure while starting is written down
       this.primaryStage = primaryStage;
       this.primaryStage.setTitle("Sell & Win Raffle");
       AppIcon.apply(this.primaryStage);
