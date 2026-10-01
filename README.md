@@ -63,44 +63,27 @@ Data is stored locally in a single **SQLite database file** (plus item-specific 
 
 ### 1) Add a raffle item
 
-Create a new item with:
-
-- Title
-- Description
-- Number of tickets
-- Ticket price
-
-When an item is created, the app prepares:
-
-- A folder for the item’s images
-- A ticket record CSV for that item
-- An entry in the main `data.csv` catalog
+Create a new item with a title, a description, a number of tickets, a ticket price and, if you like, a picture (chosen from anywhere on the computer; it is copied into the item's own folder). The title names the item everywhere, so it must be new; characters a file name cannot hold become `_`. The item gets one unsold ticket per number. Later, **Edit Item** changes the description, the price and the number of tickets.
 
 ### 2) Add item images
 
-Each item gets its own image folder under the application data directory. Operators can set a default image for the main dashboard and browse all images for an item in the item viewer.
+Each item has its own picture folder under the application data directory. *View Item* browses the pictures, adds more and picks the one shown on the main screen and on the draw screen.
 
 ### 3) Sell tickets
 
-For a selected item, the operator can add players by entering:
-
-- Player name
-- Phone number
-- Number of tickets to purchase
-
-The app randomly assigns available ticket IDs and writes the updated player state back to the item’s record file.
+For a selected item, the operator enters the buyer's name, phone number and number of tickets, and whether the buyer pays now. The app picks random free tickets, shows the amount to pay while typing, records the price each ticket was sold for, and tells the operator the ticket numbers the buyer got. Buyers can be marked paid or unpaid later, a purchase can be taken back, and **Receipt** opens a receipt for the selected buyer.
 
 ### 4) Check player status
 
-The player status screen supports searching by:
-
-- Ticket ID
-- Phone number
-- Player name
+The player status screen (opened from the draw screen) finds tickets by ticket number (fewer than 7 digits), phone number or buyer name, and says whether they are paid.
 
 ### 5) Run the draw
 
-Choose how many winners to draw and whether one person can win only once, then press **Start** and **Stop** (or `Space`). The numbers slow down and land on the winner, which is picked at the moment of Stop from the sold tickets only, so the timing of the click cannot influence it. Winners are listed as they are drawn; **New draw** starts a fresh sitting. Every winner is appended to `data/draws.csv`.
+Choose how many winners to draw and whether one person can win only once, then press **Start** and **Stop** (or `Space`). The numbers slow down and land on the winner, which is picked at the moment of Stop from the sold tickets only, so the timing of the click cannot influence it. Winners are listed as they are drawn; **New draw** starts a fresh sitting; **Certificate** opens a certificate for every winner so far. Every winner is saved in the draw history, which the sales report also lists.
+
+### 6) Report
+
+**Report** on the main screen opens the sales report: the figures of every item, the buyers of each item, the payments still to collect and the winners.
 
 ---
 
@@ -324,11 +307,12 @@ The repository contains automated tests for:
 - CSV reading and writing, including files from older versions
 - Atomic saves and backups
 - Phone validation, settings, money formatting and localized messages
+- The error log (`logs/app.log`)
 - Sales figures (per item and for the whole raffle) and payments
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 31 test classes, 224 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
+Current test suite: 32 test classes, 230 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
 
 ---
 
@@ -360,6 +344,17 @@ packaging/package.sh app-image exe  # on Windows, also the installer (needs the 
 
 The result is in `target/dist`. Installers can only be built on the operating system they are for. Set `APP_VERSION` (for example `1.2.0`) to override the version from `pom.xml`.
 
+### Releasing
+
+1. Make sure the tests and the *Windows installer* check of the pull request are green, and that someone has installed the installer on a clean Windows computer and tried it (start, sell a ticket, amounts read like `538,50 €`, a report opens in the browser, data is still there after a restart).
+2. Tag the merged commit: `git tag v1.0.0 && git push origin v1.0.0`. The *Windows installer* workflow builds the installer and the portable zip and attaches them to a new GitHub Release (`v` is dropped from the file names; the version must be numeric).
+3. The installer is not code-signed: Windows SmartScreen shows "Windows protected your PC" (*More info* → *Run anyway*). Signing needs a certificate, which costs money.
+4. To rebuild without publishing, run the workflow by hand from the *Actions* tab (*Windows installer* → *Run workflow*); the files are an artifact of the run.
+
+### If something goes wrong on a computer
+
+The application writes what goes wrong to `~/Sell & Win Raffle/logs/app.log` (the installed application has no console). Ask for that file, together with a screenshot and the step that failed. A copy of the data is in `backups/` from every start.
+
 The folder `out/artifacts/` holds old builds from before the packaging above (a plain jar and a Launch4j `.exe`, which needs Java installed). They are not updated any more.
 
 ---
@@ -381,13 +376,16 @@ The JavaFX UI currently includes these views:
 
 ## ⚠️ Current Limitations
 
-- One operator at a time: the database file is opened by one running copy of the application
-- Designed for local use (not multi-user)
-- Images managed through the local file system
+- One operator at a time: the database file is opened by one running copy of the application (not multi-user)
+- Images are kept as ordinary files in the item folders, not inside the database; *Export CSV* does not copy them
+- The installer is not code-signed (Windows SmartScreen warns), and has not been run on a real Windows computer by the author of this work: see `CHANGELOG.md`
+- The printed documents are HTML pages for the browser; there is no PDF export of its own (the browser's *Save as PDF* does it)
+- The controllers have no unit tests of their own
 
 ---
 
 ## 🛣️ Future Improvements
 
-- An optional remote connection (several operators on one raffle)
+- An optional remote connection. Not started: the design depends on the scenario (several operators on one raffle at the same time, or one own server the application connects to), which is still to be decided
 - QR codes on receipts, if they will be scanned at the draw
+- Code signing of the installer
