@@ -19,11 +19,16 @@ public final class AppLog {
 
    static final long MAX_BYTES = 1_000_000;
 
+   // What System.err was before the log took over, and the open log file (the file stays open while the application runs)
+   private static PrintStream replaced;
+   private static OutputStream logFile;
+
    private AppLog() {
    }
 
    /** Starts writing the error output to the file too. Logging is a convenience: a problem here never stops the application. */
-   public static void install(Path file) {
+   public static synchronized void install(Path file) {
+      uninstall();
       PrintStream original = System.err;
       try {
          Files.createDirectories(file.toAbsolutePath().getParent());
@@ -31,6 +36,8 @@ public final class AppLog {
             Files.move(file, file.resolveSibling(file.getFileName() + ".old"), StandardCopyOption.REPLACE_EXISTING);
          }// end of if block
          OutputStream log = new FileOutputStream(file.toFile(), true);
+         replaced = original;
+         logFile = log;
          System.setErr(new PrintStream(new Tee(original, log), true, StandardCharsets.UTF_8));
          System.err.println("=== " + Instant.now() + " | Java " + System.getProperty("java.version") + " | "
                             + System.getProperty("os.name") + " | " + System.getProperty("user.home"));
@@ -38,6 +45,21 @@ public final class AppLog {
          original.println("Could not open the log file " + file + ": " + e.getMessage());
       }// end of try-catch block
    }// end of install method
+
+   /** Gives the error output back and closes the file. The application never needs this; tests do (Windows cannot delete an open file). */
+   public static synchronized void uninstall() {
+      if (logFile != null) {
+         System.err.flush();
+         System.setErr(replaced);
+         try {
+            logFile.close();
+         } catch (IOException ignored) {
+            // nothing more can be done
+         }// end of try-catch block
+         logFile = null;
+         replaced = null;
+      }// end of if block
+   }// end of uninstall method
 
    // Writes to the console (when there is one) and to the file; a failing half never breaks the other
    private static final class Tee extends OutputStream {

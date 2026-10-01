@@ -29,6 +29,7 @@ class AppLogTest {
 
    @AfterEach
    void restoreErr() {
+      AppLog.uninstall();// the file must be closed before the temporary folder can be deleted (Windows)
       System.setErr(originalErr);
    }
 
@@ -65,7 +66,7 @@ class AppLogTest {
       AppLog.install(file);
       System.err.println("first run");
 
-      System.setErr(originalErr);
+      AppLog.uninstall();// the first run ends
       useFakeConsole();
       AppLog.install(file);
       System.err.println("second run");
@@ -96,5 +97,20 @@ class AppLogTest {
 
       assertTrue(console.toString(StandardCharsets.UTF_8).contains("Could not open the log file"));
       assertFalse(Files.isDirectory(blocker));
+   }
+
+   @Test
+   void uninstallingGivesTheErrorOutputBackAndClosesTheFile() throws IOException {
+      useFakeConsole();
+      PrintStream beforeInstall = System.err;
+      Path file = dir.resolve("app.log");
+      AppLog.install(file);
+
+      AppLog.uninstall();
+      System.err.println("after");
+
+      assertTrue(System.err == beforeInstall);
+      assertFalse(Files.readString(file).contains("after"), "no longer written to the file");
+      Files.delete(file);// a closed file can be deleted on every system
    }
 }
