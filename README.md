@@ -38,6 +38,7 @@ Data is stored locally in a single **SQLite database file** (plus item-specific 
 - 📜 Every draw is saved to a history file (time, item, ticket, winner)
 - 🛟 Crash-safe saves (every change is one database transaction) and an automatic backup on every start-up
 - 🗃️ Data in one SQLite file; the CSV files of earlier versions are converted automatically on the first start (and left untouched), and an **Export CSV** button writes everything back out as CSV files for a spreadsheet
+- 🖨️ Printed documents, as pages that open in the browser (print them, or choose *Save as PDF*): a **sales report** (the figures of every item, the buyers of each item with their tickets and what they paid or owe, a list of payments still to collect, the winners), a **receipt** for a purchase (select the buyer on the sales screen, press *Receipt*) and a **certificate** for every winner drawn (*Certificate* on the draw screen). The name of the organizer on them comes from the optional `organizer=` line in `settings.properties`
 - 📊 A dashboard on the main screen: tickets sold, money collected, money still owed and what selling everything would bring, plus a progress bar and the collected/owed amount for every item
 - 🎨 Dark and light theme, switched with a button on the main screen and remembered; one stylesheet whose colours are variables, so a new theme is a handful of lines
 - 🌍 English and Romanian: every screen is translated, the language follows the system language at first and can be switched with the `RO`/`EN` button on the main screen (the choice is remembered in `settings.properties`). Texts live in `i18n/messages*.properties`
@@ -113,7 +114,9 @@ At runtime, the application writes data to the user’s home directory:
     raffle.db                 (everything: items, tickets, draw history)
   <item-title>/
     image files...
-  settings.properties         (language, theme and currency)
+  settings.properties         (language, theme, currency and the optional organizer name)
+  reports/
+    <yyyyMMdd-HHmmss>-sales-report.html, ...-receipt.html, ...-certificates.html   (the printed documents, kept)
   exports/
     <yyyyMMdd-HHmmss>/        (what the Export CSV button writes: data/ and records/ in the CSV layout below)
   backups/
@@ -230,6 +233,10 @@ The UI is split into focused JavaFX controllers:
 - `TicketLookup` — finds tickets by number, phone or name for the status screen
 - `ValidationException` — carries the key of the message to show, so services know nothing about language or screens
 
+### Reports
+
+`raffle.reports` makes the printed documents. `ReportService` works out what they show from the repository (the sales report with buyers grouped per person and every ticket at the price it was sold for, the receipt of one purchase, the winners' certificates); `HtmlReports` turns that into complete HTML pages in the active language, with everything typed by the operator escaped; `ReportFiles` saves them in `reports/` and `Documents` opens them in the browser. Pages are HTML on purpose: any computer can show and print them, *Save as PDF* is in every browser, and no PDF library has to be packaged.
+
 ### Storage
 
 All data goes through the `RaffleRepository` interface (`raffle.storage`), so the screens and services do not know where the data lives.
@@ -309,6 +316,7 @@ The repository contains automated tests for:
 
 - Draw logic (only sold tickets win, exclusions, chance proportional to tickets held, several winners, one prize per person)
 - Draw history
+- The printed documents: grouping of buyers, who owes what, one receipt per purchase, certificates, escaping of names, English and Romanian text and no untranslated key
 - Selling and taking back tickets (random distinct tickets, several purchases by one buyer, totals per buyer), items (creation, duplicates, pictures, deletion with archived ledger) and the status lookup
 - The storage contract: the CSV and the SQLite repository must pass the same tests; the database layout and its versioning, the conversion of CSV files on the first start (including a failing one), and CSV export/import round trips
 - CSV reading and writing, including files from older versions
@@ -318,7 +326,7 @@ The repository contains automated tests for:
 - Translation guard: English and Romanian define the same keys and placeholders, and every key used in Java or FXML exists
 - Models
 
-Current test suite: 28 test classes, 203 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
+Current test suite: 31 test classes, 224 JUnit tests (`mvn test`). The controllers are not unit tested yet; they only show what the services return.
 
 ---
 
@@ -380,4 +388,4 @@ The JavaFX UI currently includes these views:
 ## 🛣️ Future Improvements
 
 - An optional remote connection (several operators on one raffle)
-- Sales reports, PDF export, winner certificates and ticket receipts
+- QR codes on receipts, if they will be scanned at the draw

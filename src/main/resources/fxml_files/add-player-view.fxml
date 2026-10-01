@@ -68,6 +68,7 @@
         <Button fx:id="removePlayerButton" onAction="#handleRemovePlayer" text="%player.btn.remove" />
         <Button fx:id="markPaidButton" onAction="#handleMarkPaid" text="%player.btn.markPaid" />
         <Button fx:id="markUnpaidButton" onAction="#handleMarkUnpaid" text="%player.btn.markUnpaid" />
+        <Button fx:id="receiptButton" onAction="#handleReceipt" text="%player.btn.receipt" />
         <Button fx:id="clearFieldsButton" onAction="#clearFields" text="%player.btn.clear" />
         <Button fx:id="refreshButton" onAction="#handleRefresh" text="%player.btn.refresh" textAlignment="CENTER" />
     </FlowPane>

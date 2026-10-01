@@ -19,10 +19,16 @@ import raffle.services.ItemOverview;
 import raffle.services.ItemSales;
 import raffle.services.ItemService;
 import raffle.services.SalesSummary;
+import raffle.reports.HtmlReports;
+import raffle.reports.ReportFiles;
+import raffle.reports.ReportService;
+import raffle.reports.SalesReport;
 import raffle.storage.CsvTransfer;
 import raffle.storage.Storage;
+import raffle.ui.Documents;
 import raffle.ui.Theme;
 import raffle.utils.AppPaths;
+import raffle.utils.AppSettings;
 import raffle.utils.ItemImages;
 import raffle.utils.Messages;
 import raffle.utils.Money;
@@ -30,6 +36,7 @@ import raffle.ui.Dialogs;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -73,6 +80,8 @@ public class MainViewController {
    private Button viewItemButton;
    @FXML
    private Button refreshListButton;
+   @FXML
+   private Button reportButton;
    @FXML
    private Button exportButton;
    @FXML
@@ -218,6 +227,7 @@ public class MainViewController {
       addTooltip(refreshListButton, Messages.get("main.tip.refresh"));
       addTooltip(buyTicketsButton, Messages.get("main.tip.buy"));
       addTooltip(viewItemButton, Messages.get("main.tip.view"));
+      addTooltip(reportButton, Messages.get("main.tip.report"));
       addTooltip(exportButton, Messages.get("main.tip.export"));
       addTooltip(languageButton, Messages.get("main.tip.language"));
       languageButton.setText(Messages.other().getLanguage().toUpperCase(Locale.ROOT));// shows the language it switches to
@@ -395,6 +405,18 @@ public class MainViewController {
       Theme.toggle();
       app.showMainView();
    }//end of handleToggleTheme method
+
+   // The sales report as a page the browser can print or save as PDF
+   @FXML
+   private void handleReport() {
+      try {
+         SalesReport report = new ReportService(Storage.repository()).salesReport(Instant.now());
+         String organizer = AppSettings.get("organizer").orElse("");
+         Documents.open(ReportFiles.write(AppPaths.reportsDir(), "sales-report", HtmlReports.salesReport(report, organizer)));
+      } catch (IOException e) {
+         Dialogs.show(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("report.err", String.valueOf(e.getMessage())));
+      }// end of try-catch block
+   }//end of handleReport method
 
    // Write all the data as CSV files (a spreadsheet can open them) into a new folder
    @FXML

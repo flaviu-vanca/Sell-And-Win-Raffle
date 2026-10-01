@@ -9,14 +9,21 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 import raffle.models.Item;
 import raffle.models.Player;
+import raffle.reports.HtmlReports;
+import raffle.reports.Receipt;
+import raffle.reports.ReportFiles;
+import raffle.reports.ReportService;
 import raffle.services.ItemSales;
 import raffle.services.SalesService;
 import raffle.services.TicketSales;
 import raffle.services.ValidationException;
 import raffle.storage.Storage;
+import raffle.utils.AppPaths;
+import raffle.utils.AppSettings;
 import raffle.utils.Messages;
 import raffle.utils.Money;
 import raffle.ui.Dialogs;
+import raffle.ui.Documents;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -59,6 +66,8 @@ public class AddPlayerController {
    @FXML
    private Button markUnpaidButton;
    @FXML
+   private Button receiptButton;
+   @FXML
    private TextField playerName;
    @FXML
    private TextField phoneNumber;
@@ -93,6 +102,7 @@ public class AddPlayerController {
       addTooltip(removePlayerButton, Messages.get("player.tip.deleteOne"));
       addTooltip(markPaidButton, Messages.get("player.tip.markPaid"));
       addTooltip(markUnpaidButton, Messages.get("player.tip.markUnpaid"));
+      addTooltip(receiptButton, Messages.get("player.tip.receipt"));
       addTooltip(totalLabel, Messages.get("player.tip.total"));
       addTooltip(paidCheck, Messages.get("player.tip.paidCheck"));
 
@@ -398,6 +408,28 @@ public class AddPlayerController {
       }// end of try-catch block
       handleRefresh();// shows what is really stored, and the new totals
    }// end of markSelected method
+
+   // A receipt for the purchase of the selected buyer, as a page the browser can print or save as PDF
+   @FXML
+   private void handleReceipt() {
+      Player selected = playerTable.getSelectionModel().getSelectedItems().stream().filter(Player::isSold).findFirst().orElse(null);
+      if (selected == null) {
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("alert.title.noSelection"), Messages.get("player.selectBuyer"));
+         return;
+      }// end of if block
+
+      try {
+         Optional<Receipt> receipt = new ReportService(Storage.repository()).receipt(itemTitle, selected.getId());
+         if (receipt.isEmpty()) {
+            handleRefresh();// the ticket is not sold any more: show what is really stored
+            return;
+         }// end of if block
+         String organizer = AppSettings.get("organizer").orElse("");
+         Documents.open(ReportFiles.write(AppPaths.reportsDir(), "receipt", HtmlReports.receipt(receipt.get(), organizer)));
+      } catch (IOException e) {
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("report.err", String.valueOf(e.getMessage())));
+      }// end of try-catch block
+   }// end of handleReceipt method
 
    // Amount to pay for the number of tickets being typed
    private void updateTotal() {

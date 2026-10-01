@@ -20,6 +20,7 @@ import raffle.models.Item;
 import raffle.storage.Storage;
 import raffle.ui.AppIcon;
 import raffle.ui.Dialogs;
+import raffle.ui.Documents;
 import raffle.ui.Theme;
 import raffle.utils.AppPaths;
 import raffle.utils.BackupService;
@@ -37,6 +38,7 @@ public class App extends Application {
       this.primaryStage = primaryStage;
       this.primaryStage.setTitle("Sell & Win Raffle");
       AppIcon.apply(this.primaryStage);
+      Documents.init(getHostServices());
       Messages.initFromSettings();
       Theme.initFromSettings();
 

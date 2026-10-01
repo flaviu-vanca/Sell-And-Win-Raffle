@@ -28,6 +28,10 @@ public final class AppPaths {
       return dataDir().resolve("data.csv");
    }// end of catalogFile method
 
+   public static Path reportsDir() {
+      return root().resolve("reports");
+   }// end of reportsDir method
+
    public static Path exportsDir() {
       return root().resolve("exports");
    }// end of exportsDir method

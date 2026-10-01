@@ -22,12 +22,19 @@ import raffle.models.Item;
 import raffle.models.Player;
 import raffle.services.DrawSession;
 import raffle.services.RaffleDraw;
+import raffle.reports.Certificate;
+import raffle.reports.HtmlReports;
+import raffle.reports.ReportFiles;
+import raffle.reports.ReportService;
 import raffle.storage.RaffleRepository;
 import raffle.storage.Storage;
 import raffle.ui.AppIcon;
 import raffle.ui.ConfettiCanvas;
 import raffle.ui.Dialogs;
+import raffle.ui.Documents;
 import raffle.ui.Theme;
+import raffle.utils.AppPaths;
+import raffle.utils.AppSettings;
 import raffle.utils.Fxml;
 import raffle.utils.ItemImages;
 import raffle.utils.Messages;
@@ -75,6 +82,8 @@ public class DrawController {
    @FXML
    private Button checkPlayerStatus;
    @FXML
+   private Button certificateButton;
+   @FXML
    private Button fullscreenButton;
    @FXML
    private Button startStopButton;
@@ -100,6 +109,7 @@ public class DrawController {
       addTooltip(winerLabel, Messages.get("draw.tip.winner"));
       addTooltip(winnersSpinner, Messages.get("draw.tip.winners"));
       addTooltip(onePerPerson, Messages.get("draw.tip.onePerPerson"));
+      addTooltip(certificateButton, Messages.get("draw.tip.certificate"));
       addTooltip(fullscreenButton, Messages.get("draw.tip.fullscreen"));
       addTooltip(startStopButton, Messages.get("draw.tip.startNow"));
 
@@ -211,6 +221,7 @@ public class DrawController {
               : Messages.get("draw.winner");
       winerLabel.setText(heading + "\n" + winner.getName() + "\n" + Messages.get("draw.ticketId", String.valueOf(winner.getId())));
       showWinnersList(winners);
+      certificateButton.setDisable(false);
 
       ScaleTransition pop = new ScaleTransition(Duration.millis(380), generatedNumber);
       pop.setFromX(1);
@@ -260,6 +271,7 @@ public class DrawController {
       generatedNumber.setText(Messages.get("draw.unknownNumber"));
       winnersListLabel.setVisible(false);
       winnersListLabel.setManaged(false);
+      certificateButton.setDisable(true);
       winnersSpinner.setDisable(false);
       onePerPerson.setDisable(false);
       showItemSummary();
@@ -287,6 +299,28 @@ public class DrawController {
       winnersListLabel.setManaged(true);
       winnersListLabel.setVisible(true);
    }// end of showWinnersList method
+
+   // A certificate for every winner drawn so far, as a page the browser can print or save as PDF
+   @FXML
+   private void handleCertificate() {
+      if (session == null || session.winners().isEmpty()) {
+         showAlert(Alert.AlertType.INFORMATION, Messages.get("report.title"), Messages.get("draw.noWinnersYet"));
+         return;
+      }// end of if block
+
+      try {
+         // The browser should come to the front, not open behind a full screen window
+         if (root.getScene() != null && root.getScene().getWindow() instanceof Stage stage && stage.isFullScreen()) {
+            handleToggleFullscreen();
+         }// end of if block
+         List<Integer> winnerIds = session.winners().stream().map(Player::getId).toList();
+         List<Certificate> certificates = new ReportService(repository).certificates(itemTitle, winnerIds, Instant.now());
+         String organizer = AppSettings.get("organizer").orElse("");
+         Documents.open(ReportFiles.write(AppPaths.reportsDir(), "certificates", HtmlReports.certificates(certificates, organizer)));
+      } catch (IOException e) {
+         showAlert(Alert.AlertType.ERROR, Messages.get("alert.title.error"), Messages.get("report.err", String.valueOf(e.getMessage())));
+      }// end of try-catch block
+   }// end of handleCertificate method
 
    @FXML
    private void handleToggleFullscreen() {
